@@ -11,6 +11,8 @@ import NotFound from './NotFound'
 
 function Accordion({ title, children }) {
   const [open, setOpen] = useState(false)
+  // Mount on first open, then keep mounted so collapsing doesn't wipe the conversation
+  const [opened, setOpened] = useState(false)
   return (
     <section className="border-y-4 border-ink">
       <h2>
@@ -18,7 +20,7 @@ function Accordion({ title, children }) {
           type="button"
           aria-expanded={open}
           aria-controls="ask-panel"
-          onClick={() => setOpen(v => !v)}
+          onClick={() => { setOpen(v => !v); setOpened(true) }}
           className="flex min-h-[56px] w-full items-center justify-between gap-4 py-3 text-left transition-colors duration-200 hover:text-accent"
         >
           <span className="font-serif text-2xl font-bold lg:text-3xl">{title}</span>
@@ -28,8 +30,8 @@ function Accordion({ title, children }) {
         </button>
       </h2>
       <div id="ask-panel" className={cn('grid transition-all duration-300 ease-in-out', open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0')}>
-        <div className="overflow-hidden">
-          {open && <div className="pb-6">{children}</div>}
+        <div className="overflow-hidden" {...(!open && { inert: '' })}>
+          {opened && <div className="pb-6">{children}</div>}
         </div>
       </div>
     </section>
@@ -48,6 +50,8 @@ export default function ArticlePage() {
   const [analysis, setAnalysis] = useState('idle')  // idle | writing | failed
   const [analysisError, setAnalysisError] = useState('')
   const requested = useRef(new Set())
+  const currentId = useRef(id)
+  currentId.current = id
 
   // Load the article whenever the id changes (navigating between stories reuses this component)
   useEffect(() => {
@@ -72,8 +76,16 @@ export default function ArticlePage() {
     requested.current.add(article.id)
     setAnalysis('writing')
     analyzeArticle(article.id)
-      .then(a => { setArticle(prev => (prev?.id === a.id ? a : prev)); setAnalysis('idle') })
-      .catch(err => { setAnalysisError(errorMessage(err)); setAnalysis('failed') })
+      .then(a => {
+        if (String(a.id) !== currentId.current) return   // reader moved on to another story
+        setArticle(prev => (prev?.id === a.id ? a : prev))
+        setAnalysis('idle')
+      })
+      .catch(err => {
+        if (String(article.id) !== currentId.current) return
+        setAnalysisError(errorMessage(err))
+        setAnalysis('failed')
+      })
   }, [article, health.features.ai_analysis])
 
   const goBack = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/'))

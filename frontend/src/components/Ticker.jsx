@@ -20,6 +20,7 @@ export default function Ticker() {
 
   // Capture phase runs before <Link>'s own handler, so preventDefault cancels navigation
   const onClickCapture = (e) => {
+    if (e.detail === 0) return        // keyboard "click" (Enter): just follow the link
     if (!paused) {
       e.preventDefault()
       setPaused(true)

@@ -154,8 +154,8 @@ def belongs_elsewhere(article: Dict, category: str) -> bool:
 def _article(title, url, source, published, content, category) -> Optional[Dict[str, Any]]:
     title = clean_excerpt(title, 480)
     url = (url or "").strip()
-    if not title or not url.startswith(("http://", "https://")):
-        return None
+    if not title or not url.startswith(("http://", "https://")) or len(url) > 2000:
+        return None   # 2000 = Article.url column length (Postgres enforces it)
     content = clean_excerpt(content, 4000)
     return {
         "title":        title,

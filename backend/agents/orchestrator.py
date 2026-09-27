@@ -19,7 +19,8 @@ from datetime import timedelta, timezone
 from typing import List, Optional
 
 from sqlalchemy import delete, desc, func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm.exc import StaleDataError
 
 from agents.news_agent import NewsAgent
 from agents.summarizer_agent import SummarizerAgent
@@ -68,8 +69,15 @@ class OrchestratorAgent:
                 if isinstance(articles, Exception):
                     log.warning("Fetch failed for %s: %s", cat, type(articles).__name__)
                     continue
-                stored += await self._store(cat, articles)
-            removed = await self._cleanup()
+                try:
+                    stored += await self._store(cat, articles)
+                except Exception:   # one bad section must not stop the others
+                    log.exception("Storing %s failed", cat)
+            try:
+                removed = await self._cleanup()
+            except Exception:
+                log.exception("Cleanup failed")
+                removed = 0
 
         analyzed = await self.analyze_pending()
         summary = {"stored": len(stored), "removed": removed, "analyzed": analyzed,
@@ -147,7 +155,11 @@ class OrchestratorAgent:
                     article.why_it_matters   = result["why_it_matters"]
                     article.background_info  = result["background_info"]
                     article.tags             = result["tags"]
-                    await db.commit()
+                    try:
+                        await db.commit()
+                    except StaleDataError:   # archived by cleanup while the LLM was writing
+                        await db.rollback()
+                        return None
                     return article
         finally:
             if not lock.locked():
@@ -187,6 +199,9 @@ class OrchestratorAgent:
                     ids.append(row.id)
                 except IntegrityError:   # URL stored meanwhile by another process
                     await db.rollback()
+                except SQLAlchemyError as e:   # e.g. a value too long for Postgres
+                    await db.rollback()
+                    log.warning("[%s] skipped one article: %s", category, type(e).__name__)
             log.info("[%s] stored %d new articles", category, len(ids))
             return ids
 

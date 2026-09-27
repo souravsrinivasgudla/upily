@@ -29,9 +29,11 @@ def clean_excerpt(text: Optional[str], max_len: int) -> str:
     return truncate(strip_html(text), max_len)
 
 
-def extract_json(raw: Optional[str], expect: type = dict) -> Any:
+def extract_json(raw: Optional[str], expect: type = dict, items: Optional[type] = None) -> Any:
     """
     Return the first JSON value of type `expect` found in `raw`, or None.
+    With `items`, a list only counts if it is non-empty and every element is of that type
+    (so "headlines [3] and [7]: [{...}]" yields the list of objects, not [3]).
     Tolerates markdown fences and chatter before/after the JSON.
     """
     if not raw:
@@ -43,7 +45,9 @@ def extract_json(raw: Optional[str], expect: type = dict) -> Any:
     while idx != -1:
         try:
             value, _ = decoder.raw_decode(text, idx)
-            if isinstance(value, expect):
+            if isinstance(value, expect) and (
+                items is None or (value and all(isinstance(v, items) for v in value))
+            ):
                 return value
         except json.JSONDecodeError:
             pass

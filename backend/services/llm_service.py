@@ -37,13 +37,13 @@ def _get_client():
         key, timeout = settings.llm_api_key, settings.LLM_TIMEOUT_SECONDS
         if settings.LLM_PROVIDER == "groq":
             from groq import AsyncGroq
-            _client = AsyncGroq(api_key=key, timeout=timeout)
+            _client = AsyncGroq(api_key=key, timeout=timeout, max_retries=0)
         elif settings.LLM_PROVIDER == "openai":
             from openai import AsyncOpenAI
-            _client = AsyncOpenAI(api_key=key, timeout=timeout)
+            _client = AsyncOpenAI(api_key=key, timeout=timeout, max_retries=0)
         else:
             import anthropic
-            _client = anthropic.AsyncAnthropic(api_key=key, timeout=timeout)
+            _client = anthropic.AsyncAnthropic(api_key=key, timeout=timeout, max_retries=0)
     return _client
 
 

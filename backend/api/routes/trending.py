@@ -18,7 +18,7 @@ from config import settings
 from services import llm_service
 from datetime import timedelta
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, update
 
 from db.database import AsyncSessionLocal
 from db.models import Article
@@ -130,6 +130,18 @@ async def _recent_stored(limit: int = 25) -> list[dict]:
     return out
 
 
+async def _mark_trending(ids: set[int]) -> None:
+    """Flag stored stories that belong to a current hot topic (drives the Trending badge)."""
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(update(Article).where(Article.is_trending.is_(True)).values(is_trending=False))
+            if ids:
+                await db.execute(update(Article).where(Article.id.in_(ids)).values(is_trending=True))
+            await db.commit()
+    except Exception as e:
+        log.warning("Trending: could not update flags: %s", type(e).__name__)
+
+
 async def _extract_topics(articles: list[dict]) -> list[dict]:
     if not llm_service.is_llm_configured():
         return []
@@ -154,7 +166,7 @@ Return ONLY a JSON array of 5 objects."""
         return []
 
     topics = []
-    for t in (extract_json(raw, expect=list) or [])[:5]:
+    for t in (extract_json(raw, expect=list, items=dict) or [])[:5]:
         if not isinstance(t, dict) or not t.get("topic"):
             continue
         idx = [i - 1 for i in (t.get("article_indices") or []) if isinstance(i, int)]
@@ -200,11 +212,22 @@ async def get_trending(force: bool = Query(False)):
         articles = dedupe(gnews + serp)   # the live wire feed
 
         if not articles:
-            return {"topics": [], "articles": [], "total": 0, "fetched_at": None,
-                    "configured": bool(settings.GNEWS_API_KEY or settings.SERPAPI_API_KEY)}
+            now = time.monotonic()
+            if _cache.get("articles"):
+                # Upstream blip or quota hit: keep showing the last good edition
+                log.warning("Trending: no live results; serving the previous edition")
+                _cache = {**_cache, "stale": True}
+            else:
+                _cache = {"topics": [], "articles": [], "total": 0, "fetched_at": None,
+                          "configured": bool(settings.GNEWS_API_KEY or settings.SERPAPI_API_KEY)}
+            # Retry upstream only after FALLBACK_TTL, not on every page view
+            _cache_built, _cache_expires = now, now + FALLBACK_TTL
+            return _cache
 
-        # Topics are grouped from live headlines first, then Upily's own recent stories
-        topics = await _extract_topics(dedupe(articles + await _recent_stored()))
+        # Topics are grouped from live headlines plus Upily's own recent stories —
+        # slots are reserved so stored stories are included even when both APIs are on
+        pool = dedupe(articles[:20] + (await _recent_stored())[:15])[:30]
+        topics = await _extract_topics(pool)
         ai = bool(topics)
         result = {
             "topics":      topics or _fallback_topics(articles),
@@ -214,6 +237,7 @@ async def get_trending(force: bool = Query(False)):
             "configured":  True,
             "fetched_at":  utcnow().isoformat(),
         }
+        await _mark_trending({a["id"] for t in topics for a in t["articles"] if a.get("id")})
         _cache = result
         _cache_built = time.monotonic()
         _cache_expires = _cache_built + (CACHE_TTL if ai else FALLBACK_TTL)

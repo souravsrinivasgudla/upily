@@ -8,7 +8,22 @@ const api = axios.create({ baseURL: API_BASE, timeout: 30000 })
 // Refresh + AI analysis can take a while on a cold server
 const apiSlow = axios.create({ baseURL: API_BASE, timeout: 90000 })
 
-export const fetchHealth     = ()             => api.get('/health', { validateStatus: s => s < 600 }).then(r => r.data)
+// If VITE_API_URL is missing in a deployed build, /api/* falls through to the SPA's
+// index.html (HTTP 200). Treat an HTML answer as a configuration error, not empty data.
+const MISCONFIGURED = 'The Upily server address is not configured for this site (VITE_API_URL).'
+for (const instance of [api, apiSlow]) {
+  instance.interceptors.response.use(res => {
+    if (String(res.headers?.['content-type'] || '').includes('text/html')) {
+      const err = new Error(MISCONFIGURED)
+      err.response = { status: 502, data: { detail: MISCONFIGURED } }
+      return Promise.reject(err)
+    }
+    return res
+  })
+}
+
+// Health uses the long timeout: a free-tier server can take ~50s to wake up
+export const fetchHealth     = ()             => apiSlow.get('/health', { validateStatus: s => s < 600 }).then(r => r.data)
 export const fetchNews       = (params = {})  => api.get('/news', { params }).then(r => r.data)
 export const fetchArticle    = (id)           => api.get(`/news/${id}`).then(r => r.data)
 export const analyzeArticle  = (id)           => apiSlow.post(`/news/${id}/analyze`).then(r => r.data)

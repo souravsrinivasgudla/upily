@@ -134,3 +134,12 @@ def test_rank_returns_nothing_for_uncovered_topics():
 
 def test_section_browse():
     assert [a.id for _, a in rank("science news", CORPUS)] == [5]
+
+
+def test_scores_reject_nan():
+    assert _parse_scores("[NaN, 0.4]", 2) == [0.5, 0.4]
+
+
+def test_extract_json_can_require_objects():
+    raw = 'Topics from headlines [3] and [7]: [{"topic": "x"}]'
+    assert extract_json(raw, list, items=dict) == [{"topic": "x"}]

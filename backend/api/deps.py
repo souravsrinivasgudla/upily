@@ -9,10 +9,11 @@ from config import settings
 
 
 def client_ip(request: Request) -> str:
-    # Behind Vercel/Render the real client is the first X-Forwarded-For entry
+    # Render's proxy appends the address it actually saw to X-Forwarded-For, so the
+    # right-most entry is trustworthy. Earlier entries are whatever the client sent.
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        return forwarded.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"
 
 

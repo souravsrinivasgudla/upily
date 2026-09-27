@@ -110,3 +110,9 @@ def test_rate_limit(client):
     codes = [client.post("/api/chat", json={"question": "hello there"}).status_code for _ in range(14)]
     assert codes[-1] == 429
     assert codes.count(429) == 2
+
+
+def test_rate_limit_key_cannot_be_spoofed():
+    from starlette.requests import Request
+    req = Request({"type": "http", "headers": [(b"x-forwarded-for", b"1.2.3.4, 203.0.113.9")], "client": ("10.0.0.1", 1)})
+    assert deps.client_ip(req) == "203.0.113.9"   # the proxy-appended entry, not the client-supplied one

@@ -3,6 +3,7 @@ NewsAgent — importance-ranks a batch of fetched articles with the LLM.
 Falls back to a neutral score (newest-first order is kept) when the LLM is unavailable.
 """
 import logging
+import math
 from typing import Dict, List
 
 from services import llm_service
@@ -55,7 +56,8 @@ def _parse_scores(raw: str, expected: int) -> List[float]:
     scores = []
     for v in values[:expected]:
         try:
-            scores.append(min(max(float(v), 0.0), 1.0))
+            f = float(v)
+            scores.append(min(max(f, 0.0), 1.0) if math.isfinite(f) else DEFAULT_SCORE)
         except (TypeError, ValueError):
             scores.append(DEFAULT_SCORE)
     return scores + [DEFAULT_SCORE] * (expected - len(scores))
