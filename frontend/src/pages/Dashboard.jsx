@@ -46,7 +46,7 @@ function SectionTabs({ current, onSelect, onPrefetch }) {
 
 function HowItWorks() {
   const steps = [
-    ['Gathered', 'Every few hours Upily reads the wires — BBC, The Guardian, NYT, The Hindu, The Indian Express, TechCrunch, ESPN and more — across eight desks.'],
+    ['Gathered', 'Every few hours Upily reads the wires — BBC, The Guardian, NYT, The Hindu, TechCrunch, ESPN and more — across eight desks.'],
     ['Ranked', 'Each story is weighed for global impact, novelty and public interest, and the strongest make the page.'],
     ['Explained', 'An AI analyst writes the summary, the context and why it matters — then you can question it directly.'],
   ]

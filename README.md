@@ -2,7 +2,7 @@
 
 **The day's news: gathered, ranked, explained.**
 
-Upily reads RSS feeds from major newsrooms (BBC, The Guardian, NYT, The Hindu, The Indian Express, TechCrunch, ESPN and others) across eight sections, including India. It ranks stories by importance and writes an AI analysis for each one: a summary, the full context, why it matters, and background. You can also ask follow-up questions about any story.
+Upily reads RSS feeds from major newsrooms (BBC, The Guardian, NYT, The Hindu, TechCrunch, ESPN and others) across eight sections, including India. It ranks stories by importance and writes an AI analysis for each one: a summary, the full context, why it matters, and background. You can also ask follow-up questions about any story.
 
 - **Frontend:** React 18, Vite and Tailwind, styled in a "Newsprint" design system (tokens live in `frontend/tailwind.config.js`).
 - **Backend:** FastAPI, SQLAlchemy (async) and APScheduler.
