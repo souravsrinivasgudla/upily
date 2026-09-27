@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowUpRight, Plus, RefreshCw } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ArrowRight, ArrowUpRight, Plus, RefreshCw } from 'lucide-react'
 import { errorMessage, fetchTrending } from '../api'
 import { Badge, Button, cn, Kicker, Loading, Notice, SectionHeading } from '../components/ui'
 import { timeAgo } from '../format'
@@ -44,15 +45,27 @@ function TopicItem({ topic, index }) {
             )}
             {topic.articles?.length > 0 && (
               <ul className="mt-3 border-t border-divider">
-                {topic.articles.map(a => (
-                  <li key={a.url} className="border-b border-divider">
-                    <a href={a.url} target="_blank" rel="noopener noreferrer" tabIndex={open ? undefined : -1}
-                       className="flex items-start justify-between gap-3 py-2 font-sans text-sm hover:text-accent">
-                      <span>{a.title} <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-500">— {a.source}</span></span>
-                      <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-                    </a>
-                  </li>
-                ))}
+                {topic.articles.map(a => {
+                  const label = (
+                    <span>{a.title} <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-500">— {a.source}</span></span>
+                  )
+                  const cls = 'flex items-start justify-between gap-3 py-2 font-sans text-sm hover:text-accent'
+                  return (
+                    <li key={a.url} className="border-b border-divider">
+                      {a.id ? (
+                        <Link to={`/article/${a.id}`} tabIndex={open ? undefined : -1} className={cls}>
+                          {label}
+                          <ArrowRight className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <a href={a.url} target="_blank" rel="noopener noreferrer" tabIndex={open ? undefined : -1} className={cls}>
+                          {label}
+                          <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+                        </a>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>

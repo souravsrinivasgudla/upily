@@ -83,4 +83,9 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* The headline ticker keeps moving (it has its own pause control), just more slowly */
+  .ticker-track {
+    animation-duration: 120s !important;
+    animation-iteration-count: infinite !important;
+  }
 }

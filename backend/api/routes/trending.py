@@ -1,7 +1,10 @@
 """
-Trending — live top headlines from GNews + SerpAPI, with the LLM grouping them
-into the hottest topics. Cached for 30 minutes; `?force=true` bypasses the cache
-at most once every 2 minutes so the paid APIs can't be hammered.
+Trending ("The Pulse") — live top headlines from GNews and/or SerpAPI, plus Upily's
+own stories from the last few hours, grouped by the LLM into the hottest topics.
+
+One upstream call per provider per refresh. Cached for 45 minutes; `?force=true`
+bypasses the cache at most once every 10 minutes. GNews' free plan allows 100
+requests/day, which the news pipeline also draws on.
 """
 import asyncio
 import logging
@@ -13,6 +16,12 @@ from fastapi import APIRouter, Depends, Query
 from api.deps import trending_limit
 from config import settings
 from services import llm_service
+from datetime import timedelta
+
+from sqlalchemy import desc, select
+
+from db.database import AsyncSessionLocal
+from db.models import Article
 from services.dates import parse_date, utcnow
 from services.news_service import CATEGORIES, dedupe
 from services.text import clean_excerpt, extract_json
@@ -20,9 +29,10 @@ from services.text import clean_excerpt, extract_json
 log = logging.getLogger(__name__)
 router = APIRouter()
 
-CACHE_TTL = 30 * 60
-FALLBACK_TTL = 5 * 60        # shorter cache when the LLM step failed
-FORCE_MIN_INTERVAL = 2 * 60
+CACHE_TTL = 45 * 60
+FALLBACK_TTL = 10 * 60       # shorter cache when the LLM step failed
+FORCE_MIN_INTERVAL = 10 * 60
+RECENT_HOURS = 12            # Upily stories added to the topic analysis
 
 _cache: dict = {}
 _cache_expires: float = 0.0
@@ -98,6 +108,28 @@ async def _fetch_serpapi(client: httpx.AsyncClient) -> list[dict]:
         return []
 
 
+async def _recent_stored(limit: int = 25) -> list[dict]:
+    """Upily's own freshest stories — free extra signal for the topic grouping."""
+    try:
+        async with AsyncSessionLocal() as db:
+            rows = (await db.execute(
+                select(Article)
+                .where(Article.fetched_at >= utcnow() - timedelta(hours=RECENT_HOURS))
+                .order_by(desc(Article.importance_score), desc(Article.fetched_at))
+                .limit(limit)
+            )).scalars().all()
+    except Exception as e:
+        log.warning("Trending: could not read stored stories: %s", type(e).__name__)
+        return []
+    out = []
+    for a in rows:
+        item = _item(a.title, a.url, a.source, a.published_at, a.summary, None)
+        if item:
+            item["id"] = a.id          # lets the UI link to Upily's own article page
+            out.append(item)
+    return out
+
+
 async def _extract_topics(articles: list[dict]) -> list[dict]:
     if not llm_service.is_llm_configured():
         return []
@@ -165,13 +197,14 @@ async def get_trending(force: bool = Query(False)):
 
         async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
             gnews, serp = await asyncio.gather(_fetch_gnews(client), _fetch_serpapi(client))
-        articles = dedupe(gnews + serp)
+        articles = dedupe(gnews + serp)   # the live wire feed
 
         if not articles:
             return {"topics": [], "articles": [], "total": 0, "fetched_at": None,
                     "configured": bool(settings.GNEWS_API_KEY or settings.SERPAPI_API_KEY)}
 
-        topics = await _extract_topics(articles)
+        # Topics are grouped from live headlines first, then Upily's own recent stories
+        topics = await _extract_topics(dedupe(articles + await _recent_stored()))
         ai = bool(topics)
         result = {
             "topics":      topics or _fallback_topics(articles),
