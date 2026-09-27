@@ -20,7 +20,7 @@ from services.text import clean_excerpt
 
 log = logging.getLogger(__name__)
 
-CATEGORIES = ["technology", "world", "science", "business", "health", "entertainment", "sports"]
+CATEGORIES = ["technology", "india", "world", "science", "business", "health", "entertainment", "sports"]
 
 MIN_RSS_RESULTS = 8          # below this, top up from the keyed APIs
 HTTP_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; UpilyBot/1.0; +https://upily.app)"}
@@ -71,8 +71,39 @@ RSS_FEEDS: Dict[str, List[str]] = {
     ],
 }
 
+# The Hindu — direct RSS with full excerpts, one feed per section
+THE_HINDU_FEEDS = {
+    "technology":    "https://www.thehindu.com/sci-tech/technology/feeder/default.rss",
+    "india":         "https://www.thehindu.com/news/national/feeder/default.rss",
+    "world":         "https://www.thehindu.com/news/international/feeder/default.rss",
+    "science":       "https://www.thehindu.com/sci-tech/science/feeder/default.rss",
+    "business":      "https://www.thehindu.com/business/feeder/default.rss",
+    "health":        "https://www.thehindu.com/sci-tech/health/feeder/default.rss",
+    "entertainment": "https://www.thehindu.com/entertainment/feeder/default.rss",
+    "sports":        "https://www.thehindu.com/sport/feeder/default.rss",
+}
+for _cat, _url in THE_HINDU_FEEDS.items():
+    RSS_FEEDS.setdefault(_cat, []).append(_url)
+
+# Publishers whose own feeds block automated readers (Indian Express answers 403 via
+# CloudFront) are read through Google News' public per-site RSS instead. Links go
+# through a news.google.com redirect and entries carry only the headline.
+GOOGLE_NEWS_SITES: Dict[str, Dict[str, str]] = {
+    "The Indian Express": {
+        "technology":    "indianexpress.com/article/technology",
+        "india":         "indianexpress.com/article/india",
+        "world":         "indianexpress.com/article/world",
+        "science":       "indianexpress.com/article/technology/science",
+        "business":      "indianexpress.com/article/business",
+        "health":        "indianexpress.com/article/lifestyle/health",
+        "entertainment": "indianexpress.com/article/entertainment",
+        "sports":        "indianexpress.com/article/sports",
+    },
+}
+
 # Short OR-queries: news APIs treat spaces as AND, so long keyword lists match nothing.
 SEARCH_QUERIES: Dict[str, str] = {
+    "india":         "India OR Delhi OR Mumbai",
     "technology":    "technology OR AI OR software",
     "world":         "world OR international OR diplomacy",
     "science":       "science OR research OR space",
@@ -82,11 +113,17 @@ SEARCH_QUERIES: Dict[str, str] = {
     "sports":        "sports OR football OR basketball",
 }
 # Native category names for top-headlines endpoints (NewsAPI has no "world")
-GNEWS_CATEGORY   = {c: c for c in CATEGORIES}
-NEWSAPI_CATEGORY = {c: c for c in CATEGORIES if c != "world"}
+GNEWS_CATEGORY   = {c: c for c in CATEGORIES} | {"india": "nation"}   # "nation" + country=in
+NEWSAPI_CATEGORY = {c: c for c in CATEGORIES if c not in ("world", "india")}
 
 # Used to drop articles that plainly belong to another section. Matched on whole words.
 CATEGORY_KEYWORDS: Dict[str, List[str]] = {
+    "india": [
+        "india", "indian", "delhi", "new delhi", "mumbai", "bengaluru", "chennai", "kolkata",
+        "hyderabad", "kerala", "tamil nadu", "karnataka", "maharashtra", "bihar", "uttar pradesh",
+        "gujarat", "punjab", "kashmir", "modi", "bjp", "congress", "lok sabha", "rajya sabha",
+        "chief minister", "supreme court", "high court", "rupee", "rbi", "isro",
+    ],
     "technology": [
         "ai", "artificial intelligence", "software", "hardware", "tech", "app", "apps", "robot",
         "computer", "cyber", "data", "cloud", "startup", "silicon", "chip", "chips", "gpu", "llm",
@@ -146,7 +183,9 @@ def belongs_elsewhere(article: Dict, category: str) -> bool:
     text = f"{article.get('title', '')} {article.get('content', '')}"
     if keyword_hits(text, category) > 0:
         return False
-    return any(keyword_hits(text, other) >= 2 for other in CATEGORIES if other != category)
+    # "india" is geographic and overlaps every topic section, so it never pulls stories away
+    return any(keyword_hits(text, other) >= 2 for other in CATEGORIES
+               if other not in (category, "india"))
 
 
 # ── Sources ───────────────────────────────────────────────────────────────────
@@ -173,9 +212,14 @@ _SOURCE_NAMES = [
     ("NYT", "The New York Times"), ("New York Times", "The New York Times"),
     ("Guardian", "The Guardian"), ("Al Jazeera", "Al Jazeera"),
 ]
+# Feeds whose titles don't name the publisher (The Hindu's are "Technology News Today, …")
+_SOURCE_BY_DOMAIN = {"thehindu.com": "The Hindu", "indianexpress.com": "The Indian Express"}
 
 
-def _source_name(feed_title: str) -> str:
+def _source_name(feed_title: str, feed_url: str = "") -> str:
+    for domain, name in _SOURCE_BY_DOMAIN.items():
+        if domain in feed_url:
+            return name
     for needle, name in _SOURCE_NAMES:
         if needle in feed_title:
             return name
@@ -190,7 +234,7 @@ async def _from_rss(client: httpx.AsyncClient, category: str, per_feed: int) -> 
                 log.info("RSS %s -> HTTP %s", url, resp.status_code)
                 return []
             feed = feedparser.parse(resp.content)
-            source = _source_name(feed.feed.get("title", ""))
+            source = _source_name(feed.feed.get("title", ""), url)
             out = []
             for e in feed.entries[:per_feed]:
                 a = _article(
@@ -209,6 +253,37 @@ async def _from_rss(client: httpx.AsyncClient, category: str, per_feed: int) -> 
     return [a for sub in results for a in sub]
 
 
+async def _from_google_news_sites(client: httpx.AsyncClient, category: str, per_site: int) -> List[Dict]:
+    """Per-publisher Google News RSS (see GOOGLE_NEWS_SITES)."""
+    async def _one(publisher: str, path: str) -> List[Dict]:
+        try:
+            resp = await client.get(
+                "https://news.google.com/rss/search",
+                params={"q": f"site:{path} when:1d", "hl": "en-IN", "gl": "IN", "ceid": "IN:en"},
+            )
+            if resp.status_code != 200:
+                log.info("Google News (%s) -> HTTP %s", publisher, resp.status_code)
+                return []
+            out = []
+            suffix = f" - {publisher}"
+            for e in feedparser.parse(resp.content).entries[:per_site]:
+                title = e.get("title") or ""
+                if title.endswith(suffix):
+                    title = title[: -len(suffix)]
+                # Google's entry summary only repeats the headline — don't pass it off as content
+                a = _article(title, e.get("link"), publisher, e.get("published"), "", category)
+                if a:
+                    out.append(a)
+            return out
+        except Exception as e:
+            log.info("Google News (%s) failed: %s", publisher, type(e).__name__)
+            return []
+
+    jobs = [_one(pub, sections[category]) for pub, sections in GOOGLE_NEWS_SITES.items() if category in sections]
+    results = await asyncio.gather(*jobs)
+    return [a for sub in results for a in sub]
+
+
 async def _from_gnews(client: httpx.AsyncClient, category: str, max_results: int) -> List[Dict]:
     if not settings.GNEWS_API_KEY:
         return []
@@ -216,7 +291,8 @@ async def _from_gnews(client: httpx.AsyncClient, category: str, max_results: int
         resp = await client.get(
             "https://gnews.io/api/v4/top-headlines",
             params={"category": GNEWS_CATEGORY[category], "lang": "en",
-                    "max": min(max_results, 10), "apikey": settings.GNEWS_API_KEY},
+                    "max": min(max_results, 10), "apikey": settings.GNEWS_API_KEY,
+                    **({"country": "in"} if category == "india" else {})},
         )
         if resp.status_code != 200:
             log.warning("GNews HTTP %s", resp.status_code)
@@ -322,8 +398,12 @@ async def fetch_category(category: str, max_results: int = 20) -> List[Dict[str,
         raise ValueError(f"Unknown category: {category}")
 
     async with httpx.AsyncClient(timeout=10, follow_redirects=True, headers=HTTP_HEADERS) as client:
-        articles = await _from_rss(client, category, per_feed=max_results)
-        fresh = [a for a in articles if is_fresh(a["published_at"], settings.FRESHNESS_HOURS)]
+        rss, google_sites = await asyncio.gather(
+            _from_rss(client, category, per_feed=max_results),
+            _from_google_news_sites(client, category, per_site=max_results),
+        )
+        articles = rss + google_sites
+        fresh =[a for a in articles if is_fresh(a["published_at"], settings.FRESHNESS_HOURS)]
 
         if len(fresh) < MIN_RSS_RESULTS:
             extra = await asyncio.gather(

@@ -143,3 +143,13 @@ def test_scores_reject_nan():
 def test_extract_json_can_require_objects():
     raw = 'Topics from headlines [3] and [7]: [{"topic": "x"}]'
     assert extract_json(raw, list, items=dict) == [{"topic": "x"}]
+
+
+def test_india_never_pulls_stories_from_topic_sections():
+    cricket = {"title": "India beat Pakistan as Kohli hits century in Delhi", "content": ""}
+    assert not belongs_elsewhere(cricket, "sports")
+
+
+def test_publisher_named_from_feed_url():
+    from services.news_service import _source_name
+    assert _source_name("Technology News Today, Latest Tech News", "https://www.thehindu.com/x.rss") == "The Hindu"
