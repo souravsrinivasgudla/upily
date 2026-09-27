@@ -1,0 +1,131 @@
+# Upily
+
+**The day's news: gathered, ranked, explained.**
+
+Upily reads RSS feeds from major newsrooms (BBC, The Guardian, NYT, TechCrunch, ESPN and others) across seven sections. It ranks stories by importance and writes an AI analysis for each one: a summary, the full context, why it matters, and background. You can also ask follow-up questions about any story.
+
+- **Frontend:** React 18, Vite and Tailwind, styled in a "Newsprint" design system (tokens live in `frontend/tailwind.config.js`).
+- **Backend:** FastAPI, SQLAlchemy (async) and APScheduler.
+- **LLM:** Groq (default), OpenAI or Anthropic.
+
+---
+
+## Quick start
+
+### Prerequisites
+
+- Python 3.12
+- Node.js 20 or newer
+
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env               # then add your keys (see below)
+uvicorn main:app --reload --port 8000
+```
+
+On the first start the backend creates `backend/upily.db` (SQLite) and runs the news pipeline once.
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev                        # http://localhost:3000, proxies /api to :8000
+```
+
+### Tests
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest
+```
+
+---
+
+## Keys and configuration
+
+All backend settings live in `backend/.env`. See [`backend/.env.example`](backend/.env.example) for the full list.
+
+Real environment variables take precedence over `.env`.
+
+| Variable | Needed for | Where to get it |
+|---|---|---|
+| `GROQ_API_KEY` | AI analysis, chat, trending topics (**recommended**) | [console.groq.com/keys](https://console.groq.com/keys), free tier |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | Alternatives to Groq; also set `LLM_PROVIDER` | platform.openai.com / console.anthropic.com |
+| `GNEWS_API_KEY` | The Pulse (trending); tops up thin RSS sections | [gnews.io](https://gnews.io), 100 requests/day free |
+| `SERPAPI_API_KEY` | The Pulse (Google News top stories) | [serpapi.com](https://serpapi.com), 100 searches/month free |
+| `NEWS_API_KEY` | Optional extra news source | [newsapi.org](https://newsapi.org); the free tier only works from localhost |
+| `SERPER_API_KEY` | Optional better web search in chat (otherwise DuckDuckGo is used) | [serper.dev](https://serper.dev) |
+| `ADMIN_API_KEY` | Admin endpoints (see below) | Any long random string |
+| `DATABASE_URL` | **Production only:** Postgres | e.g. [neon.tech](https://neon.tech) free tier |
+
+With no keys at all, Upily still works: news comes from RSS and articles show the source excerpt. With only `GROQ_API_KEY`, everything except The Pulse works.
+
+---
+
+## Deployment
+
+- **Backend on Render:** `render.yaml` (root directory: `backend`). Set the secrets in the Render dashboard.
+  - **Use Postgres for `DATABASE_URL`.** Render's disk is wiped on every deploy, which would erase a SQLite database.
+- **Frontend on Vercel:** set the project's root directory to `frontend`. `frontend/vercel.json` proxies `/api/*` to the Render service.
+
+---
+
+## API
+
+| Method | Endpoint | Notes |
+|---|---|---|
+| `GET` | `/api/health` | Status, database check, which features are enabled |
+| `GET` | `/api/categories` | The seven sections |
+| `GET` | `/api/news` | `?category=&trending=&page=&limit=` (limit up to 50) |
+| `GET` | `/api/news/{id}` | One article, with its analysis |
+| `POST` | `/api/news/{id}/analyze` | Writes the AI analysis on the server. Returns the saved analysis if it already exists. Rate-limited. |
+| `POST` | `/api/news/refresh/{category}` | Adds new stories without deleting any. Rate-limited, with a cooldown per section. |
+| `POST` | `/api/chat` | `{ question, article_id?, history? }`. Rate-limited. |
+| `GET` | `/api/trending` | `?force=true` skips the 30-minute cache, at most once every 2 minutes |
+| `POST` | `/api/admin/pipeline` | Admin only (`X-Admin-Token` header): run the full pipeline now |
+| `PATCH` | `/api/news/{id}/enrich` | Admin only: edit an article's analysis by hand |
+
+---
+
+## How the pipeline works
+
+Every `FETCH_INTERVAL_HOURS` (default 4), the pipeline runs these steps for each section:
+
+1. **Fetch** the RSS feeds, topping up from the news APIs when RSS is thin.
+2. **Filter out** stories older than `FRESHNESS_HOURS` and stories already stored.
+3. **Rank** the rest with the LLM.
+4. **Store** the top `ARTICLES_PER_CATEGORY`.
+5. **Clean up:** delete stories older than `RETENTION_HOURS` and keep at most `MAX_STORED_PER_CATEGORY` per section.
+6. **Analyse** the new stories. This stops after 3 LLM failures in a row, so a bad key doesn't waste calls.
+
+Other behaviour:
+
+- On startup, the pipeline runs only if the stored news is older than the interval.
+- All writes share one lock, so the scheduled runs and manual refreshes can't collide.
+
+## Project layout
+
+```
+backend/
+  main.py            FastAPI app, CORS, lifespan
+  config.py          Settings (.env)
+  api/routes/        news, chat, trending, health
+  api/deps.py        Rate limiting and admin-token auth
+  agents/            orchestrator (pipeline), news_agent (ranking), summarizer_agent, qa_agent
+  services/          news_service (feeds and APIs), llm_service, search_service,
+                     dates, text, tasks
+  db/                Engine and the Article model
+  scheduler/         APScheduler job
+  tests/             pytest suite
+frontend/
+  src/components/    ui.jsx (design primitives), Layout, Ticker, ArticleCard, ChatPanel, ErrorBoundary
+  src/pages/         Dashboard (front page), ArticlePage, TrendingPage (The Pulse), ChatPage
+  tailwind.config.js Newsprint design tokens
+```
