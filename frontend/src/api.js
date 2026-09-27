@@ -1,8 +1,12 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api', timeout: 30000 })
+// In production VITE_API_URL is the backend's origin (e.g. https://upily-api.onrender.com).
+// Locally it's unset and the Vite dev server proxies /api to the backend.
+const API_BASE = `${(import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')}/api`
+
+const api = axios.create({ baseURL: API_BASE, timeout: 30000 })
 // Refresh + AI analysis can take a while on a cold server
-const apiSlow = axios.create({ baseURL: '/api', timeout: 90000 })
+const apiSlow = axios.create({ baseURL: API_BASE, timeout: 90000 })
 
 export const fetchHealth     = ()             => api.get('/health', { validateStatus: s => s < 600 }).then(r => r.data)
 export const fetchNews       = (params = {})  => api.get('/news', { params }).then(r => r.data)
