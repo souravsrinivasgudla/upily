@@ -20,14 +20,17 @@ from services.text import clean_excerpt
 
 log = logging.getLogger(__name__)
 
-CATEGORIES = ["technology", "india", "world", "science", "business", "forex", "health", "entertainment", "sports"]
+CATEGORIES = ["technology", "ai", "india", "world", "science", "business", "forex", "health", "entertainment", "sports"]
 
 # Sections that overlap others (a place, or a sub-area of business). They never pull a
 # story out of another section via keyword matching.
-OVERLAPPING_SECTIONS = {"india", "forex"}
+OVERLAPPING_SECTIONS = {"india", "forex", "ai"}
 
 # Forex desks go quiet at weekends (markets close Friday evening, reopen Sunday night)
-CATEGORY_FRESHNESS_HOURS = {"forex": 72}
+CATEGORY_FRESHNESS_HOURS = {
+    "forex": 72,
+    "ai": 72,      # AI labs' own blogs post every few days
+}
 
 MIN_RSS_RESULTS = 8          # below this, top up from the keyed APIs
 HTTP_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; UpilyBot/1.0; +https://upily.app)"}
@@ -95,6 +98,18 @@ for _cat, _url in THE_HINDU_FEEDS.items():
 # Forex: Forex Factory's own pages block automated readers (Cloudflare 403), so forex
 # news comes from FXStreet and investingLive (formerly ForexLive). Forex Factory's
 # official economic calendar feed is used separately — see services/calendar_service.py.
+# AI: outlets' dedicated AI sections plus the labs' own announcement blogs
+RSS_FEEDS["ai"] = [
+    "https://www.theguardian.com/technology/artificialintelligenceai/rss",
+    "https://techcrunch.com/category/artificial-intelligence/feed/",
+    "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+    "https://www.wired.com/feed/tag/ai/latest/rss",
+    "https://arstechnica.com/ai/feed/",
+    "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+    "https://openai.com/news/rss.xml",
+    "https://blog.google/technology/ai/rss/",
+]
+
 RSS_FEEDS["forex"] = [
     "https://www.fxstreet.com/rss/news",
     "https://investinglive.com/feed/",
@@ -102,6 +117,7 @@ RSS_FEEDS["forex"] = [
 
 # Short OR-queries: news APIs treat spaces as AND, so long keyword lists match nothing.
 SEARCH_QUERIES: Dict[str, str] = {
+    "ai":            "\"artificial intelligence\" OR OpenAI OR LLM",
     "forex":         "forex OR currency OR \"exchange rate\"",
     "india":         "India OR Delhi OR Mumbai",
     "technology":    "technology OR AI OR software",
@@ -114,11 +130,17 @@ SEARCH_QUERIES: Dict[str, str] = {
 }
 # Native category names for top-headlines endpoints (NewsAPI has no "world")
 # GNews has no forex category, and its "business" headlines would dilute the section
-GNEWS_CATEGORY   = {c: c for c in CATEGORIES if c != "forex"} | {"india": "nation"}   # nation + country=in
-NEWSAPI_CATEGORY = {c: c for c in CATEGORIES if c not in ("world", "india", "forex")}
+GNEWS_CATEGORY   = {c: c for c in CATEGORIES if c not in ("forex", "ai")} | {"india": "nation"}   # nation + country=in
+NEWSAPI_CATEGORY = {c: c for c in CATEGORIES if c not in ("world", "india", "forex", "ai")}
 
 # Used to drop articles that plainly belong to another section. Matched on whole words.
 CATEGORY_KEYWORDS: Dict[str, List[str]] = {
+    "ai": [
+        "ai", "a.i.", "artificial intelligence", "machine learning", "deep learning", "llm", "llms",
+        "large language model", "chatbot", "chatgpt", "gpt", "openai", "anthropic", "claude", "gemini",
+        "deepmind", "copilot", "llama", "mistral", "nvidia", "generative", "neural", "model", "models",
+        "agent", "agents", "agi", "training", "inference", "robotics",
+    ],
     "forex": [
         "forex", "fx", "currency", "currencies", "exchange rate", "dollar", "usd", "euro", "eur",
         "yen", "jpy", "sterling", "pound", "gbp", "franc", "chf", "aud", "cad", "nzd", "yuan", "rupee",
@@ -219,7 +241,16 @@ _SOURCE_NAMES = [
     ("Guardian", "The Guardian"), ("Al Jazeera", "Al Jazeera"),
 ]
 # Feeds whose titles don't name the publisher (The Hindu's are "Technology News Today, …")
-_SOURCE_BY_DOMAIN = {"thehindu.com": "The Hindu", "fxstreet.com": "FXStreet", "investinglive.com": "investingLive"}
+_SOURCE_BY_DOMAIN = {
+    "thehindu.com": "The Hindu", "fxstreet.com": "FXStreet", "investinglive.com": "investingLive",
+    "openai.com": "OpenAI", "blog.google": "Google", "technologyreview.com": "MIT Technology Review",
+    "wired.com": "WIRED", "arstechnica.com": "Ars Technica", "cnbc.com": "CNBC",
+    "skysports.com": "Sky Sports", "healthline.com": "Healthline", "phys.org": "Phys.org",
+    "npr.org": "NPR", "statnews.com": "STAT", "space.com": "Space.com", "newscientist.com": "New Scientist",
+    "scientificamerican.com": "Scientific American", "espn.com": "ESPN", "usatoday.com": "USA Today",
+    "variety.com": "Variety", "hollywoodreporter.com": "The Hollywood Reporter", "deadline.com": "Deadline",
+    "who.int": "WHO",
+}
 
 
 def _source_name(feed_title: str, feed_url: str = "") -> str:

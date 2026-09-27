@@ -7,9 +7,9 @@ import { useHealth } from '../useHealth'
 import ArticleCard from '../components/ArticleCard'
 import EconomicCalendar from '../components/EconomicCalendar'
 import { Button, cn, Figure, Kicker, Loading, Notice, Ornament, SectionHeading } from '../components/ui'
-import { capitalize } from '../format'
+import { sectionName, sectionTitle } from '../format'
 
-export const CATEGORIES = ['technology', 'india', 'world', 'science', 'business', 'forex', 'health', 'sports', 'entertainment']
+export const CATEGORIES = ['technology', 'ai', 'india', 'world', 'science', 'business', 'forex', 'health', 'sports', 'entertainment']
 const LIMIT = 20
 const ANALYSIS_RECHECK_MS = 25000
 
@@ -41,7 +41,7 @@ function SectionTabs({ current, onSelect, onPrefetch }) {
             current === cat ? 'bg-ink text-paper' : 'hover:bg-neutral-100 hover:text-accent',
           )}
         >
-          {cat}
+          {sectionName(cat)}
         </button>
       ))}
     </div>
@@ -50,7 +50,7 @@ function SectionTabs({ current, onSelect, onPrefetch }) {
 
 function HowItWorks() {
   const steps = [
-    ['Gathered', 'Every few hours Upily reads the wires — BBC, The Guardian, NYT, The Hindu, TechCrunch, FXStreet, ESPN and more — across nine desks — plus Forex Factory’s economic calendar.'],
+    ['Gathered', 'Every few hours Upily reads the wires — BBC, The Guardian, NYT, The Hindu, TechCrunch, FXStreet, ESPN, the AI labs’ own blogs and more — across ten desks — plus Forex Factory’s economic calendar.'],
     ['Ranked', 'Each story is weighed for global impact, novelty and public interest, and the strongest make the page.'],
     ['Explained', 'An AI analyst writes the summary, the context and why it matters — then you can question it directly.'],
   ]
@@ -108,16 +108,16 @@ export default function Dashboard() {
     if (refreshing) return
     const cat = category
     setRefreshing(cat)
-    setNotice({ tone: 'info', text: `Checking the wires for new ${cat} stories…` })
+    setNotice({ tone: 'info', text: `Checking the wires for new ${sectionName(cat)} stories…` })
     try {
       const result = await refreshCategory(cat)
       put(cat, LIMIT, result.articles || [])
       if (categoryRef.current === cat) setFeed({ status: 'ready', articles: result.articles || [], error: '' })
 
       const text = result.added
-        ? `${result.added} new ${result.added === 1 ? 'story' : 'stories'} added to ${capitalize(cat)}.` +
+        ? `${result.added} new ${result.added === 1 ? 'story' : 'stories'} added to ${sectionTitle(cat)}.` +
           (result.analysis_pending ? ' The analysis desk is writing them up now.' : '')
-        : `No new ${cat} stories since the last edition.`
+        : `No new ${sectionName(cat)} stories since the last edition.`
       setNotice({ tone: 'info', text })
 
       if (result.analysis_pending) {
@@ -142,14 +142,14 @@ export default function Dashboard() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink py-3">
         <p aria-live="polite" className="font-mono text-xs uppercase tracking-widest text-neutral-500">
-          {feed.status === 'ready' ? `${feed.articles.length} ${feed.articles.length === 1 ? 'story' : 'stories'} · ${category} desk` : ' '}
+          {feed.status === 'ready' ? `${feed.articles.length} ${feed.articles.length === 1 ? 'story' : 'stories'} · ${sectionName(category)} desk` : ' '}
         </p>
         <Button
           variant="secondary"
           onClick={handleRefresh}
           disabled={!!refreshing}
           className="w-full sm:w-auto"
-          aria-label={`Check for new ${category} stories`}
+          aria-label={`Check for new ${sectionName(category)} stories`}
         >
           <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} strokeWidth={1.5} />
           {refreshing ? 'Checking…' : 'Check for new stories'}
@@ -178,7 +178,7 @@ export default function Dashboard() {
       {feed.status === 'ready' && feed.articles.length === 0 && (
         <div className="my-8 border-4 border-ink px-6 py-16 text-center">
           <Kicker className="block mb-3">Nothing on the wire yet</Kicker>
-          <h2 className="font-serif text-3xl font-black sm:text-4xl">The {category} desk is quiet.</h2>
+          <h2 className="font-serif text-3xl font-black sm:text-4xl">The {sectionName(category)} desk is quiet.</h2>
           <p className="mt-3 font-body text-neutral-600">New stories arrive every few hours — or check the wires now.</p>
           <Button className="mt-6 w-full md:w-auto" onClick={handleRefresh} disabled={!!refreshing}>Check for new stories</Button>
         </div>
@@ -186,12 +186,12 @@ export default function Dashboard() {
 
       {lead && (
         <>
-          <section aria-label={`Top ${category} stories`} className="mt-6 grid grid-cols-1 border border-ink lg:grid-cols-12">
+          <section aria-label={`Top ${sectionName(category)} stories`} className="mt-6 grid grid-cols-1 border border-ink lg:grid-cols-12">
             <ArticleCard article={lead} variant="lead" className="border-b border-ink lg:col-span-8 lg:border-b-0 lg:border-r" />
             <div className="lg:col-span-4">
               <Figure
-                label={category}
-                caption={`Fig. 1.1 — The ${category} desk, ${new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`}
+                label={sectionTitle(category)}
+                caption={`Fig. 1.1 — The ${sectionName(category)} desk, ${new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`}
                 className="hidden border-b border-ink lg:block"
               />
               <Kicker className="block border-b border-t border-ink px-4 py-2 text-ink lg:border-t-0">Also on the desk</Kicker>
@@ -203,7 +203,7 @@ export default function Dashboard() {
 
           {rest.length > 0 && (
             <section aria-labelledby="more-heading" className="mt-16">
-              <SectionHeading id="more-heading" kicker={`${rest.length} more`} title={`More from ${capitalize(category)}`} />
+              <SectionHeading id="more-heading" kicker={`${rest.length} more`} title={`More from ${sectionTitle(category)}`} />
               <div className="mt-6 grid grid-cols-1 grid-rules md:grid-cols-2 lg:grid-cols-3">
                 {rest.map(a => <ArticleCard key={a.id} article={a} className="hard-shadow-hover bg-paper" />)}
               </div>

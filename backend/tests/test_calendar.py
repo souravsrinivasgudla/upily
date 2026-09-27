@@ -50,3 +50,9 @@ def test_calendar_endpoint_filters_and_survives_outage(monkeypatch):
             raise RuntimeError("feed down")
         monkeypatch.setattr(calendar_service, "get_week", down)
         assert client.get("/api/calendar").status_code == 503
+
+
+def test_ai_section_is_overlapping_and_keeps_tech_stories():
+    story = {"title": "OpenAI unveils a new reasoning model for developers", "content": ""}
+    assert not belongs_elsewhere(story, "ai")
+    assert not belongs_elsewhere(story, "technology")   # AI never pulls stories out of technology

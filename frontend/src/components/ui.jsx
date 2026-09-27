@@ -107,7 +107,7 @@ export function Figure({ label, caption, className }) {
       <div className="relative aspect-[4/3] overflow-hidden bg-neutral-200">
         <div className="absolute inset-0 halftone opacity-10" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-serif font-black italic text-5xl lg:text-6xl text-ink/80 capitalize">{label}</span>
+          <span className="font-serif font-black italic text-5xl lg:text-6xl text-ink/80">{label}</span>
         </div>
       </div>
       {caption && (

@@ -30,6 +30,13 @@ export function editionNumber(d = new Date()) {
 
 export const capitalize = (s = '') => s.charAt(0).toUpperCase() + s.slice(1)
 
+// Section keys are lowercase ids; some names need special casing ("ai" → "AI")
+const SECTION_LABELS = { ai: 'AI' }
+/** For use inside a sentence: "new AI stories", "new sports stories" */
+export const sectionName = (cat = '') => SECTION_LABELS[cat] || cat
+/** For headings and labels: "AI", "Sports" */
+export const sectionTitle = (cat = '') => SECTION_LABELS[cat] || capitalize(cat)
+
 /** Split long AI text into paragraphs for column layout. */
 export const paragraphs = (text) =>
   (text || '').split(/\n\s*\n|\n/).map(p => p.trim()).filter(Boolean)

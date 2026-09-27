@@ -2,7 +2,7 @@
 
 **The day's news: gathered, ranked, explained.**
 
-Upily reads RSS feeds from major newsrooms (BBC, The Guardian, NYT, The Hindu, TechCrunch, FXStreet, ESPN and others) across nine sections, including India and Forex. The Forex section also shows this week's economic calendar from Forex Factory. It ranks stories by importance and writes an AI analysis for each one: a summary, the full context, why it matters, and background. You can also ask follow-up questions about any story.
+Upily reads RSS feeds from major newsrooms (BBC, The Guardian, NYT, The Hindu, TechCrunch, FXStreet, ESPN, and AI labs' own blogs such as OpenAI's and Google's) across ten sections, including AI, India and Forex. The Forex section also shows this week's economic calendar from Forex Factory. It ranks stories by importance and writes an AI analysis for each one: a summary, the full context, why it matters, and background. You can also ask follow-up questions about any story.
 
 - **Frontend:** React 18, Vite and Tailwind, styled in a "Newsprint" design system (tokens live in `frontend/tailwind.config.js`).
 - **Backend:** FastAPI, SQLAlchemy (async) and APScheduler.
@@ -109,7 +109,7 @@ With no keys at all, Upily still works: news comes from RSS and articles show th
 | Method | Endpoint | Notes |
 |---|---|---|
 | `GET` | `/api/health` | Status, database check, which features are enabled |
-| `GET` | `/api/categories` | The nine sections |
+| `GET` | `/api/categories` | The ten sections |
 | `GET` | `/api/news` | `?category=&trending=&page=&limit=` (limit up to 50) |
 | `GET` | `/api/news/{id}` | One article, with its analysis |
 | `POST` | `/api/news/{id}/analyze` | Writes the AI analysis on the server. Returns the saved analysis if it already exists. Rate-limited. |
@@ -138,6 +138,10 @@ Other behaviour:
 
 - On startup, the pipeline runs only if the stored news is older than the interval.
 - All writes share one lock, so the scheduled runs and manual refreshes can't collide.
+
+## AI
+
+The AI section combines the dedicated AI sections of The Guardian, TechCrunch, The Verge, WIRED, Ars Technica and MIT Technology Review with the official OpenAI and Google AI blogs. Like Forex, it keeps stories for 72 hours, because the labs' blogs post every few days. AI stories can also appear in Technology; AI is an overlapping section, so it never pulls stories out of Technology.
 
 ## Forex
 
