@@ -24,6 +24,10 @@ def is_llm_configured() -> bool:
     return settings.llm_configured
 
 
+def is_reasoning_model(model: str) -> bool:
+    return settings.LLM_PROVIDER == "groq" and model.startswith(("openai/gpt-oss", "qwen/qwen3"))
+
+
 _client = None  # created lazily and reused so connections are pooled
 
 
@@ -55,6 +59,11 @@ async def _call(prompt: str, system: str, max_tokens: int, temperature: float) -
         )
         return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
 
+    extra = {}
+    if is_reasoning_model(settings.llm_model):
+        # Hidden reasoning tokens count toward max_tokens — leave headroom so the answer isn't cut off
+        extra["extra_body"] = {"reasoning_effort": settings.LLM_REASONING_EFFORT}
+        max_tokens += 1024
     resp = await client.chat.completions.create(
         model=settings.llm_model,
         messages=[
@@ -63,6 +72,7 @@ async def _call(prompt: str, system: str, max_tokens: int, temperature: float) -
         ],
         max_tokens=max_tokens,
         temperature=temperature,
+        **extra,
     )
     return (resp.choices[0].message.content or "").strip()
 

@@ -8,7 +8,7 @@ BACKEND_DIR = Path(__file__).resolve().parent
 
 # Model used when LLM_MODEL is not set, per provider
 DEFAULT_MODELS = {
-    "groq":      "llama-3.3-70b-versatile",
+    "groq":      "openai/gpt-oss-120b",
     "openai":    "gpt-4o-mini",
     "anthropic": "claude-haiku-4-5-20251001",
 }
@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
     LLM_TIMEOUT_SECONDS: float = 30.0
+    # For reasoning models (gpt-oss): low keeps answers fast and cheap
+    LLM_REASONING_EFFORT: str = "low"
 
     # News sources (all optional — RSS works without keys)
     GNEWS_API_KEY: Optional[str] = None    # gnews.io

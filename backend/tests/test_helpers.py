@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from agents.news_agent import _parse_scores
+from agents.qa_agent import clean_answer
 from agents.summarizer_agent import normalize_analysis
 from services.dates import parse_date
 from services.llm_service import LLMError
@@ -72,6 +73,10 @@ def test_normalize_analysis_coerces_types():
 def test_normalize_analysis_rejects_empty():
     with pytest.raises(LLMError):
         normalize_analysis({"summary": "", "deep_explanation": ""})
+
+
+def test_clean_answer_strips_markdown_for_plain_text_chat():
+    assert clean_answer("## Top\n- **Big** win 【sports · BBC】 done") == "Top\n- Big win (sports · BBC) done"
 
 
 # ── categories ────────────────────────────────────────────────────────────────
