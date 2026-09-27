@@ -45,11 +45,9 @@ export default function ArticleCard({ article, variant = 'standard', className }
 
   const footer = (
     <div className="relative z-10 mt-auto flex flex-wrap items-center gap-2 pt-4">
-      {article.is_analyzed
-        ? (article.tags || []).slice(0, 3).map(t => (
-            <span key={t} className="font-mono text-[10px] uppercase tracking-widest text-neutral-500">#{t}</span>
-          ))
-        : <Badge tone="outline">Analysis pending</Badge>}
+      {(article.tags || []).slice(0, 3).map(t => (
+        <span key={t} className="font-mono text-[10px] uppercase tracking-widest text-neutral-500">#{t}</span>
+      ))}
       <a
         href={article.url}
         target="_blank"

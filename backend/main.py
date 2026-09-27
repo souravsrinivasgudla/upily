@@ -21,10 +21,19 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 log = logging.getLogger("upily")
 
 
+async def _catch_up() -> None:
+    """Group stories and finish any analysis a previous run didn't complete (e.g. rate limits)."""
+    from agents.orchestrator import OrchestratorAgent
+    await recluster()
+    done = await OrchestratorAgent().analyze_pending(limit=200)
+    if done:
+        log.info("Startup catch-up: analysed %d stories", done)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    spawn(recluster(), name="initial-grouping")   # group stories stored before this version
+    spawn(_catch_up(), name="startup-catch-up")
     scheduler = await start_scheduler()
     log.info("%s v%s started (LLM: %s%s)", settings.APP_NAME, settings.APP_VERSION,
              settings.LLM_PROVIDER, "" if settings.llm_configured else " — NOT CONFIGURED")
