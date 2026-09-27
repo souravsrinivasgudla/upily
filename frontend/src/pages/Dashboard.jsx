@@ -5,10 +5,11 @@ import { errorMessage, refreshCategory } from '../api'
 import { useNewsCache } from '../NewsCache'
 import { useHealth } from '../useHealth'
 import ArticleCard from '../components/ArticleCard'
+import EconomicCalendar from '../components/EconomicCalendar'
 import { Button, cn, Figure, Kicker, Loading, Notice, Ornament, SectionHeading } from '../components/ui'
 import { capitalize } from '../format'
 
-export const CATEGORIES = ['technology', 'india', 'world', 'science', 'business', 'health', 'sports', 'entertainment']
+export const CATEGORIES = ['technology', 'india', 'world', 'science', 'business', 'forex', 'health', 'sports', 'entertainment']
 const LIMIT = 20
 const ANALYSIS_RECHECK_MS = 25000
 
@@ -49,7 +50,7 @@ function SectionTabs({ current, onSelect, onPrefetch }) {
 
 function HowItWorks() {
   const steps = [
-    ['Gathered', 'Every few hours Upily reads the wires — BBC, The Guardian, NYT, The Hindu, TechCrunch, ESPN and more — across eight desks.'],
+    ['Gathered', 'Every few hours Upily reads the wires — BBC, The Guardian, NYT, The Hindu, TechCrunch, FXStreet, ESPN and more — across nine desks — plus Forex Factory’s economic calendar.'],
     ['Ranked', 'Each story is weighed for global impact, novelty and public interest, and the strongest make the page.'],
     ['Explained', 'An AI analyst writes the summary, the context and why it matters — then you can question it directly.'],
   ]
@@ -210,6 +211,8 @@ export default function Dashboard() {
           )}
         </>
       )}
+
+      {category === 'forex' && <EconomicCalendar />}
 
       <Ornament className="mt-8" />
       <HowItWorks />

@@ -42,6 +42,7 @@ SECTION_WORDS = {
     "entertainment": "entertainment",
     "sport": "sports",
     "india": "india",
+    "forex": "forex",
 }
 SECTION_BOOST = 0.15
 MIN_SCORE = 0.35

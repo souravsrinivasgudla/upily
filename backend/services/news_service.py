@@ -20,7 +20,14 @@ from services.text import clean_excerpt
 
 log = logging.getLogger(__name__)
 
-CATEGORIES = ["technology", "india", "world", "science", "business", "health", "entertainment", "sports"]
+CATEGORIES = ["technology", "india", "world", "science", "business", "forex", "health", "entertainment", "sports"]
+
+# Sections that overlap others (a place, or a sub-area of business). They never pull a
+# story out of another section via keyword matching.
+OVERLAPPING_SECTIONS = {"india", "forex"}
+
+# Forex desks go quiet at weekends (markets close Friday evening, reopen Sunday night)
+CATEGORY_FRESHNESS_HOURS = {"forex": 72}
 
 MIN_RSS_RESULTS = 8          # below this, top up from the keyed APIs
 HTTP_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; UpilyBot/1.0; +https://upily.app)"}
@@ -85,8 +92,17 @@ THE_HINDU_FEEDS = {
 for _cat, _url in THE_HINDU_FEEDS.items():
     RSS_FEEDS.setdefault(_cat, []).append(_url)
 
+# Forex: Forex Factory's own pages block automated readers (Cloudflare 403), so forex
+# news comes from FXStreet and investingLive (formerly ForexLive). Forex Factory's
+# official economic calendar feed is used separately — see services/calendar_service.py.
+RSS_FEEDS["forex"] = [
+    "https://www.fxstreet.com/rss/news",
+    "https://investinglive.com/feed/",
+]
+
 # Short OR-queries: news APIs treat spaces as AND, so long keyword lists match nothing.
 SEARCH_QUERIES: Dict[str, str] = {
+    "forex":         "forex OR currency OR \"exchange rate\"",
     "india":         "India OR Delhi OR Mumbai",
     "technology":    "technology OR AI OR software",
     "world":         "world OR international OR diplomacy",
@@ -97,11 +113,18 @@ SEARCH_QUERIES: Dict[str, str] = {
     "sports":        "sports OR football OR basketball",
 }
 # Native category names for top-headlines endpoints (NewsAPI has no "world")
-GNEWS_CATEGORY   = {c: c for c in CATEGORIES} | {"india": "nation"}   # "nation" + country=in
-NEWSAPI_CATEGORY = {c: c for c in CATEGORIES if c not in ("world", "india")}
+# GNews has no forex category, and its "business" headlines would dilute the section
+GNEWS_CATEGORY   = {c: c for c in CATEGORIES if c != "forex"} | {"india": "nation"}   # nation + country=in
+NEWSAPI_CATEGORY = {c: c for c in CATEGORIES if c not in ("world", "india", "forex")}
 
 # Used to drop articles that plainly belong to another section. Matched on whole words.
 CATEGORY_KEYWORDS: Dict[str, List[str]] = {
+    "forex": [
+        "forex", "fx", "currency", "currencies", "exchange rate", "dollar", "usd", "euro", "eur",
+        "yen", "jpy", "sterling", "pound", "gbp", "franc", "chf", "aud", "cad", "nzd", "yuan", "rupee",
+        "won", "peso", "fed", "ecb", "boj", "boe", "rba", "snb", "central bank", "rate cut", "rate hike",
+        "yields", "treasury", "treasuries", "cpi", "inflation", "payrolls", "gold", "xau", "crude",
+    ],
     "india": [
         "india", "indian", "delhi", "new delhi", "mumbai", "bengaluru", "chennai", "kolkata",
         "hyderabad", "kerala", "tamil nadu", "karnataka", "maharashtra", "bihar", "uttar pradesh",
@@ -167,9 +190,8 @@ def belongs_elsewhere(article: Dict, category: str) -> bool:
     text = f"{article.get('title', '')} {article.get('content', '')}"
     if keyword_hits(text, category) > 0:
         return False
-    # "india" is geographic and overlaps every topic section, so it never pulls stories away
     return any(keyword_hits(text, other) >= 2 for other in CATEGORIES
-               if other not in (category, "india"))
+               if other != category and other not in OVERLAPPING_SECTIONS)
 
 
 # ── Sources ───────────────────────────────────────────────────────────────────
@@ -197,7 +219,7 @@ _SOURCE_NAMES = [
     ("Guardian", "The Guardian"), ("Al Jazeera", "Al Jazeera"),
 ]
 # Feeds whose titles don't name the publisher (The Hindu's are "Technology News Today, …")
-_SOURCE_BY_DOMAIN = {"thehindu.com": "The Hindu"}
+_SOURCE_BY_DOMAIN = {"thehindu.com": "The Hindu", "fxstreet.com": "FXStreet", "investinglive.com": "investingLive"}
 
 
 def _source_name(feed_title: str, feed_url: str = "") -> str:
@@ -238,7 +260,7 @@ async def _from_rss(client: httpx.AsyncClient, category: str, per_feed: int) -> 
 
 
 async def _from_gnews(client: httpx.AsyncClient, category: str, max_results: int) -> List[Dict]:
-    if not settings.GNEWS_API_KEY:
+    if not settings.GNEWS_API_KEY or category not in GNEWS_CATEGORY:
         return []
     try:
         resp = await client.get(
@@ -350,9 +372,10 @@ async def fetch_category(category: str, max_results: int = 20) -> List[Dict[str,
     if category not in CATEGORIES:
         raise ValueError(f"Unknown category: {category}")
 
+    freshness = CATEGORY_FRESHNESS_HOURS.get(category, settings.FRESHNESS_HOURS)
     async with httpx.AsyncClient(timeout=10, follow_redirects=True, headers=HTTP_HEADERS) as client:
         articles = await _from_rss(client, category, per_feed=max_results)
-        fresh =[a for a in articles if is_fresh(a["published_at"], settings.FRESHNESS_HOURS)]
+        fresh = [a for a in articles if is_fresh(a["published_at"], freshness)]
 
         if len(fresh) < MIN_RSS_RESULTS:
             extra = await asyncio.gather(
@@ -364,7 +387,7 @@ async def fetch_category(category: str, max_results: int = 20) -> List[Dict[str,
 
     articles = [
         a for a in articles
-        if is_fresh(a["published_at"], settings.FRESHNESS_HOURS)
+        if is_fresh(a["published_at"], freshness)
         and not belongs_elsewhere(a, category)
     ]
     articles.sort(key=_sort_key, reverse=True)

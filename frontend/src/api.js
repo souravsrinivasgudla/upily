@@ -28,6 +28,7 @@ export const fetchNews       = (params = {})  => api.get('/news', { params }).th
 export const fetchArticle    = (id)           => api.get(`/news/${id}`).then(r => r.data)
 export const analyzeArticle  = (id)           => apiSlow.post(`/news/${id}/analyze`).then(r => r.data)
 export const refreshCategory = (category)     => apiSlow.post(`/news/refresh/${category}`).then(r => r.data)
+export const fetchCalendar   = ()             => api.get('/calendar').then(r => r.data)
 export const fetchTrending   = (force = false) => api.get('/trending', { params: force ? { force: true } : {} }).then(r => r.data)
 
 /** history: [{ role: 'user' | 'assistant', content }] — the last few turns give the AI context */

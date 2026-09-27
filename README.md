@@ -2,7 +2,7 @@
 
 **The day's news: gathered, ranked, explained.**
 
-Upily reads RSS feeds from major newsrooms (BBC, The Guardian, NYT, The Hindu, TechCrunch, ESPN and others) across eight sections, including India. It ranks stories by importance and writes an AI analysis for each one: a summary, the full context, why it matters, and background. You can also ask follow-up questions about any story.
+Upily reads RSS feeds from major newsrooms (BBC, The Guardian, NYT, The Hindu, TechCrunch, FXStreet, ESPN and others) across nine sections, including India and Forex. The Forex section also shows this week's economic calendar from Forex Factory. It ranks stories by importance and writes an AI analysis for each one: a summary, the full context, why it matters, and background. You can also ask follow-up questions about any story.
 
 - **Frontend:** React 18, Vite and Tailwind, styled in a "Newsprint" design system (tokens live in `frontend/tailwind.config.js`).
 - **Backend:** FastAPI, SQLAlchemy (async) and APScheduler.
@@ -109,11 +109,12 @@ With no keys at all, Upily still works: news comes from RSS and articles show th
 | Method | Endpoint | Notes |
 |---|---|---|
 | `GET` | `/api/health` | Status, database check, which features are enabled |
-| `GET` | `/api/categories` | The eight sections |
+| `GET` | `/api/categories` | The nine sections |
 | `GET` | `/api/news` | `?category=&trending=&page=&limit=` (limit up to 50) |
 | `GET` | `/api/news/{id}` | One article, with its analysis |
 | `POST` | `/api/news/{id}/analyze` | Writes the AI analysis on the server. Returns the saved analysis if it already exists. Rate-limited. |
 | `POST` | `/api/news/refresh/{category}` | Adds new stories without deleting any. Rate-limited, with a cooldown per section. |
+| `GET` | `/api/calendar` | This week's economic calendar from Forex Factory (`?impact=High,Medium`), cached for 1 hour |
 | `POST` | `/api/chat` | `{ question, article_id?, history? }`. Rate-limited. |
 | `GET` | `/api/trending` | `?force=true` skips the 45-minute cache, at most once every 10 minutes (protects the GNews free quota) |
 | `POST` | `/api/admin/pipeline` | Admin only (`X-Admin-Token` header): run the full pipeline now |
@@ -137,6 +138,11 @@ Other behaviour:
 
 - On startup, the pipeline runs only if the stored news is older than the interval.
 - All writes share one lock, so the scheduled runs and manual refreshes can't collide.
+
+## Forex
+
+- **News:** FXStreet and investingLive (formerly ForexLive). Forex Factory's own news pages block automated readers (Cloudflare returns 403), so Upily doesn't scrape them. Forex stories stay eligible for 72 hours instead of 24, because forex desks go quiet at weekends.
+- **Economic calendar:** Forex Factory's official public weekly feed (`nfs.faireconomy.media`). It gives each event's currency, time, impact, forecast and previous value. It's fetched at most once an hour for all visitors, and the last good copy is served if a fetch fails.
 
 ## Story grouping
 
