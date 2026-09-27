@@ -28,6 +28,7 @@ from config import settings
 from db.database import AsyncSessionLocal
 from db.models import Article
 from services import llm_service
+from services.clustering import recluster
 from services.dates import utcnow
 from services.news_service import CATEGORIES, fetch_category
 from services.tasks import spawn
@@ -75,6 +76,7 @@ class OrchestratorAgent:
                     log.exception("Storing %s failed", cat)
             try:
                 removed = await self._cleanup()
+                await recluster()
             except Exception:
                 log.exception("Cleanup failed")
                 removed = 0
@@ -101,6 +103,10 @@ class OrchestratorAgent:
             articles = await self._fetch(category)
             new_ids = await self._store(category, articles)
             await self._cleanup()
+            try:
+                await recluster()
+            except Exception:
+                log.exception("Story grouping failed")
             _last_refresh[category] = time.monotonic()
 
         if new_ids and llm_service.is_llm_configured():

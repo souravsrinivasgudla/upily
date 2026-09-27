@@ -153,3 +153,11 @@ def test_india_never_pulls_stories_from_topic_sections():
 def test_publisher_named_from_feed_url():
     from services.news_service import _source_name
     assert _source_name("Technology News Today, Latest Tech News", "https://www.thehindu.com/x.rss") == "The Hindu"
+
+
+def test_rate_limit_wait_is_read_from_the_error():
+    from services.llm_service import _retry_after
+    err = Exception("Rate limit reached ... Please try again in 2.8275s. Need more tokens?")
+    assert abs(_retry_after(err) - 3.3275) < 1e-6
+    assert _retry_after(Exception("try again in 1m5.5s")) == 30.0   # capped
+    assert _retry_after(Exception("no hint")) == 5.5

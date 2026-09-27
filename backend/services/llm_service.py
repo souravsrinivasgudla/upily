@@ -6,6 +6,7 @@ LLMService — single place for all LLM calls (Groq, OpenAI or Anthropic).
 """
 import asyncio
 import logging
+import re
 
 from config import settings
 
@@ -91,7 +92,8 @@ async def chat(
         )
 
     last_error: Exception | None = None
-    for attempt in range(retries + 1):
+    attempt, rate_limit_waits = 0, 0
+    while True:
         try:
             text = await _call(prompt, system, max_tokens, temperature)
             if not text:
@@ -101,12 +103,41 @@ async def chat(
             last_error = e
         except Exception as e:  # provider SDK errors
             last_error = e
+
+        status = getattr(last_error, "status_code", None)
+        if status == 429 and rate_limit_waits < MAX_RATE_LIMIT_WAITS:
+            # Per-minute token/request limit: wait as long as the provider asks, then retry.
+            # (Free tiers hit this whenever the pipeline analyses a batch of stories.)
+            wait = _retry_after(last_error)
+            rate_limit_waits += 1
+            log.info("LLM rate-limited; waiting %.1fs (%d/%d)", wait, rate_limit_waits, MAX_RATE_LIMIT_WAITS)
+            await asyncio.sleep(wait)
+            continue
+
         log.warning("LLM call failed (attempt %d/%d, %s/%s): %s: %s",
                     attempt + 1, retries + 1, settings.LLM_PROVIDER, settings.llm_model,
                     type(last_error).__name__, str(last_error)[:300])
-        if getattr(last_error, "status_code", None) in (400, 401, 403, 404):
-            break   # bad key / unknown model — retrying won't help
-        if attempt < retries:
-            await asyncio.sleep(1.5 * (attempt + 1))
+        if status in (400, 401, 403, 404) or attempt >= retries:
+            break   # bad key / unknown model — retrying won't help; or out of retries
+        attempt += 1
+        await asyncio.sleep(1.5 * attempt)
 
     raise LLMError(f"LLM call failed: {type(last_error).__name__}") from last_error
+
+
+MAX_RATE_LIMIT_WAITS = 4
+MAX_RATE_LIMIT_SLEEP = 30.0
+_TRY_AGAIN = re.compile(r"try again in (?:(\d+)m)?([\d.]+)s", re.I)
+
+
+def _retry_after(error: Exception) -> float:
+    """Seconds to wait before retrying a 429, from the Retry-After header or the error text."""
+    wait = None
+    headers = getattr(getattr(error, "response", None), "headers", None) or {}
+    try:
+        wait = float(headers.get("retry-after"))
+    except (TypeError, ValueError):
+        m = _TRY_AGAIN.search(str(error))
+        if m:
+            wait = int(m.group(1) or 0) * 60 + float(m.group(2))
+    return min((wait or 5.0) + 0.5, MAX_RATE_LIMIT_SLEEP)

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -16,6 +17,51 @@ router = APIRouter()
 
 # Undated articles sort by when we fetched them
 _sort_date = func.coalesce(Article.published_at, Article.fetched_at)
+
+
+def _coverage_entry(a: Article) -> dict:
+    return {"id": a.id, "source": a.source, "title": a.title, "url": a.url, "category": a.category}
+
+
+async def _group_members(db: AsyncSession, rows) -> dict[int, list[Article]]:
+    """All stored versions (any section) of the story groups present in `rows`."""
+    cids = {a.cluster_id for a in rows if a.cluster_id is not None}
+    members: dict[int, list[Article]] = defaultdict(list)
+    if cids:
+        for m in (await db.execute(select(Article).where(Article.cluster_id.in_(cids)))).scalars():
+            members[m.cluster_id].append(m)
+    return members
+
+
+def _with_coverage(a: Article, members: list[Article], include_content: bool) -> dict:
+    others = [m for m in members if m.id != a.id]
+    data = a.to_dict(include_content=include_content)
+    # One entry per outlet — an outlet can file the same story in two sections
+    seen, coverage = {a.source}, []
+    for m in sorted(others, key=lambda m: -(m.importance_score or 0)):
+        if m.source not in seen:
+            seen.add(m.source)
+            coverage.append(_coverage_entry(m))
+    data["coverage"] = coverage
+    data["coverage_count"] = len(seen)
+    return data
+
+
+async def collapse_groups(db: AsyncSession, rows) -> list[dict]:
+    """
+    One entry per story group, in the order the group first appears in `rows`.
+    The shown version is the most important one in this listing; the other
+    outlets' versions are attached as `coverage`.
+    """
+    members = await _group_members(db, rows)
+    groups: dict[int, list[Article]] = {}
+    for a in rows:
+        groups.setdefault(a.cluster_id if a.cluster_id is not None else -a.id, []).append(a)
+    out = []
+    for key, listed in groups.items():
+        lead = max(listed, key=lambda a: a.importance_score or 0)   # max() keeps the first on ties = newest
+        out.append(_with_coverage(lead, members.get(key, listed), include_content=False))
+    return out
 
 
 def _check_category(category: str) -> str:
@@ -44,17 +90,18 @@ async def list_news(
     if trending is not None:
         q = q.where(Article.is_trending == trending)
 
-    total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar_one()
+    # Collapse story groups before paginating so each page shows distinct stories.
+    # Sections are capped at MAX_STORED_PER_CATEGORY, so this stays a small read.
     rows = (await db.execute(
-        q.order_by(desc(_sort_date), desc(Article.importance_score))
-         .offset((page - 1) * limit).limit(limit)
+        q.order_by(desc(_sort_date), desc(Article.importance_score)).limit(1000)
     )).scalars().all()
+    stories = await collapse_groups(db, rows)
 
     return {
-        "articles": [a.to_dict(include_content=False) for a in rows],
+        "articles": stories[(page - 1) * limit: page * limit],
         "page": page,
         "limit": limit,
-        "total": total,
+        "total": len(stories),
     }
 
 
@@ -76,13 +123,13 @@ async def refresh_category(category: str, db: AsyncSession = Depends(get_db)):
 
     rows = (await db.execute(
         select(Article).where(Article.category == category)
-        .order_by(desc(_sort_date), desc(Article.importance_score)).limit(20)
+        .order_by(desc(_sort_date), desc(Article.importance_score))
     )).scalars().all()
     return {
         "category": category,
         "added": added,
         "analysis_pending": bool(added) and llm_service.is_llm_configured(),
-        "articles": [a.to_dict(include_content=False) for a in rows],
+        "articles": (await collapse_groups(db, rows))[:20],
     }
 
 
@@ -91,11 +138,12 @@ async def get_article(article_id: int, db: AsyncSession = Depends(get_db)):
     article = await db.get(Article, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found — it may have been archived.")
-    return article.to_dict()
+    members = (await _group_members(db, [article])).get(article.cluster_id, [article])
+    return _with_coverage(article, members, include_content=True)
 
 
 @router.post("/news/{article_id}/analyze", dependencies=[Depends(analyze_limit)])
-async def analyze_article(article_id: int):
+async def analyze_article(article_id: int, db: AsyncSession = Depends(get_db)):
     """
     Generate the AI analysis for a stored article, server-side, from its stored text.
     Idempotent: returns the saved analysis if it already exists.
@@ -108,7 +156,8 @@ async def analyze_article(article_id: int):
         raise HTTPException(status_code=502, detail="The AI service is unavailable right now. Try again shortly.")
     if not article:
         raise HTTPException(status_code=404, detail="Article not found — it may have been archived.")
-    return article.to_dict()
+    members = (await _group_members(db, [article])).get(article.cluster_id, [article])
+    return _with_coverage(article, members, include_content=True)
 
 
 # ── Admin only (requires X-Admin-Token: $ADMIN_API_KEY) ──────────────────────

@@ -1,0 +1,462 @@
+[
+ {
+  "id": 42,
+  "q": "Who won his first Zuffa Boxing match against Michael Pirotton?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 42,
+  "q": "Which newcomer secured a majority‑points victory in his debut bout under the new promotion?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 20,
+  "q": "Why are people still spending on hobbies even though travel is getting more expensive?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 20,
+  "q": "What explains the continued rise in discretionary spending on crafts and outdoor activities despite higher airfare costs?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 51,
+  "q": "Why is nicotine being promoted as a wellness product online?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 51,
+  "q": "What reasons are given for marketing a tobacco‑derived stimulant as a natural mood‑enhancer and longevity aid?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 84,
+  "q": "Who is set to direct the upcoming Star Wars film?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 84,
+  "q": "Which filmmaker, known for a recent superhero trilogy, has been attached to helm the next installment of the space‑opera saga?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 7,
+  "q": "How many people were killed in the recent shooting in South Africa?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 7,
+  "q": "What was the death toll from the latest firearm incident in the southern African nation?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 10,
+  "q": "What happened to Bangkok’s roads after the heavy rains?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 10,
+  "q": "How did the capital’s thoroughfares react when floodwaters rose following the recent downpour?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 69,
+  "q": "Why are AI infrastructure companies facing higher financing costs now?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 69,
+  "q": "What factor is causing increased expense for firms building artificial‑intelligence back‑ends as bond yields climb?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 13,
+  "q": "Why does AI struggle to predict how intense a hurricane will become?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 13,
+  "q": "What challenges prevent machine‑learning models from accurately forecasting the strength of tropical cyclones?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 47,
+  "q": "What does Cloudflare’s CEO say about protecting the web from AI?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 47,
+  "q": "How does the head of a major internet‑security firm propose safeguarding the open internet amid the rise of artificial intelligence?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 75,
+  "q": "What percentage of US sickle‑cell patients receive red‑cell exchange therapy?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 75,
+  "q": "How many American individuals with the hereditary blood disorder actually get the recommended exchange treatment?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 8,
+  "q": "How many people attended Pope Leo’s open‑air Mass in Paris?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 8,
+  "q": "What was the crowd size for the pontifical outdoor service held at the historic Parisian square?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 65,
+  "q": "What did lead isotopes reveal about the origin of Malawi’s copper ingots?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 65,
+  "q": "How did scientists trace the buried metal objects found by a farmer to a distant mining district?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 28,
+  "q": "Which age group is drinking more while younger people drink less?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 28,
+  "q": "Which demographic segment shows an increase in alcohol consumption as the younger cohorts cut back?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 5,
+  "q": "How much will TikTok pay in the Alabama settlement?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 5,
+  "q": "What is the minimum monetary amount the short‑form video platform agreed to remit to the southern state?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 12,
+  "q": "Why is China skeptical about AI safety warnings?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 12,
+  "q": "What reasons cause the eastern nation to view alarmist AI alerts as either foreign propaganda or a tactic against its tech firms?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 56,
+  "q": "How many people died in the floods and landslides in India and Nepal?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 56,
+  "q": "What was the combined death toll from recent river‑overflow flooding and slope failures in the two South Asian countries?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 54,
+  "q": "What is the main topic of the Googlebooks article?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 54,
+  "q": "What subject does the recent piece discuss regarding the potential authenticity of a large digitised library project?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 9,
+  "q": "What did Ethiopia’s army say about its actions amid civil‑war fears?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 9,
+  "q": "How did the military leadership pledge conduct while alleging a neighboring country supports rebel groups?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 31,
+  "q": "How were the new SNL cast members introduced in the season‑52 premiere?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 31,
+  "q": "What sketch format was used to present the latest featured players during the opening episode of the comedy show’s fifty‑second season?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 80,
+  "q": "What are film executives saying about the U.S. federal tax credit for movies?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 80,
+  "q": "How do industry financiers view the potential effects and timeline of the newly proposed national incentive for motion‑picture production?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 71,
+  "q": "Can houses be built on floodplains even if they fail the safety test?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 71,
+  "q": "Is it permissible to construct residences on low‑lying river areas despite not passing the essential protection assessment?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 55,
+  "q": "What happened to the ten climbers at the Himalayan base camp?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 55,
+  "q": "Why did a group of ten mountaineers disappear after an ice slide struck the camp near the summit of a Nepali peak?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 91,
+  "q": "Why did Prithviraj Chavan ask for a probe into the Indian Express report?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 91,
+  "q": "What prompted the senior politician from Maharashtra to request an investigation into a newspaper story about the country's election authority, and what did the other leader accuse the government of?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 16,
+  "q": "How far can black‑hole jets extend beyond a galaxy’s visible edge?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 16,
+  "q": "What recent findings suggest about the reach of energetic outflows from supermassive singularities relative to the outer gaseous halo of massive star systems?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 29,
+  "q": "Is the United States prepared for another biothreat after the anthrax letters investigation?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 29,
+  "q": "Do current public‑health capabilities adequately address a potential future biological attack, according to the former investigator’s reflection on past incidents?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 72,
+  "q": "Why is Apple facing a $5.7 billion verdict?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 72,
+  "q": "What caused a federal jury to award billions to a technology firm alleging that the smartphone and wearable maker infringed its tactile‑feedback patents?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 92,
+  "q": "What will India’s EESL showcase in Germany?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 92,
+  "q": "Which organization from South Asia plans to present its national energy‑efficiency projects at a European exhibition?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 90,
+  "q": "Why did Alpine condemn online abuse after the Colapinto crash?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 90,
+  "q": "What reason did the Formula 1 team give for denouncing digital harassment directed at drivers following the multi‑car incident in Baku?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 70,
+  "q": "What is OpenAI doing after rogue‑agent incidents appeared?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 70,
+  "q": "How is the artificial‑intelligence lab responding to reports of misaligned model behavior that exploited a government portal and other sites?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 6,
+  "q": "Who is Decap and what does he do?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 6,
+  "q": "Which behind‑the‑scenes producer is responsible for drum programming on tracks for major pop and hip‑hop artists?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 18,
+  "q": "How does a pumpkin‑derived enzyme affect peanut allergy proteins?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 18,
+  "q": "What impact does a natural catalyst extracted from a common squash have on the binding affinity of legume allergens to immune antibodies in laboratory experiments?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 19,
+  "q": "Will Poland’s rising military spending boost its economy?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 19,
+  "q": "What are the potential economic consequences of the Central European nation’s accelerated defence budget growth?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 27,
+  "q": "Why is the CDC described as ‘zombified’ and underfunded?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 27,
+  "q": "What factors have led to the public‑health agency losing independence and staff, according to critics citing budget cuts and political control?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 89,
+  "q": "What are the latest charges against Manchester City and what could happen next?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 89,
+  "q": "What recent allegations have been filed against the English football club, and what timeline or outcomes are being discussed by commentators?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 35,
+  "q": "Where can I watch the Takuma Inoue vs. Tenshin Nasukawa 2 boxing match live?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 35,
+  "q": "Which platforms will stream the rematch between the Japanese bantamweight champion and the former kick‑boxing star?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 88,
+  "q": "Is Cavan Sullivan living up to his Premier League hype?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 88,
+  "q": "How is the teenage American midfielder performing after debuting for the English top‑flight side, according to recent reports?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 37,
+  "q": "Is the Fury‑Joshua fight still on after Dana White’s comments?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 37,
+  "q": "What uncertainty surrounds the heavyweight showdown after the promotion chief said he was unsure about the bout’s status?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 93,
+  "q": "Why were Ashutosh Ranka and others detained in Guwahati?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 93,
+  "q": "What led to the arrest of a regional political leader and his associates after he accused the state chief minister of concealing school conditions?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 36,
+  "q": "Why was the SNL season‑52 premiere delayed in many areas?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 36,
+  "q": "What caused the late start of the comedy‑sketch show’s new season for numerous affiliates, according to the overrunning college football game?",
+  "difficulty": "hard"
+ },
+ {
+  "id": 53,
+  "q": "Why is the smart‑home market becoming a ‘graveyard’?",
+  "difficulty": "easy"
+ },
+ {
+  "id": 53,
+  "q": "What trends are contributing to the increasing number of discontinued connected‑device products, as highlighted in the tech newsletter?",
+  "difficulty": "hard"
+ },
+ {
+  "id": null,
+  "q": "What happened with the Mars colony independence vote?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "Latest on the Klingon peace treaty negotiations",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "Who won the 2026 intergalactic chess olympiad in Tokyo?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "Why did the Atlantis underwater city project get cancelled?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "How did the dragon sighting affect tourism in Wales?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "What did the unicorn conservation summit agree on?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "Why was the Moon's time zone changed last week?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "Who is the new mayor of the floating city of Neo-Venice?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "What caused the worldwide teleportation network outage?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "How are the time-travel tourism regulations being enforced?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "What did scientists find inside the hollow Earth expedition?",
+  "difficulty": "negative"
+ },
+ {
+  "id": null,
+  "q": "Who won the robot boxing world championship final?",
+  "difficulty": "negative"
+ }
+]

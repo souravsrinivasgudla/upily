@@ -192,6 +192,30 @@ export default function ArticlePage() {
               ))}
             </section>
           )}
+          {article.coverage?.length > 0 && (
+            <section className="border border-ink" aria-labelledby="coverage-heading">
+              <Kicker as="h3" id="coverage-heading" className="block border-b border-ink px-6 py-3 text-ink">
+                Also reported by {article.coverage.length} other {article.coverage.length === 1 ? 'outlet' : 'outlets'}
+              </Kicker>
+              <ul className="divide-y divide-divider">
+                {article.coverage.map(c => (
+                  <li key={c.id} className="flex items-start justify-between gap-3 px-6 py-3">
+                    <Link to={`/article/${c.id}`} className="group">
+                      <Kicker className="block text-ink">{c.source}</Kicker>
+                      <span className="font-serif text-base font-bold leading-snug decoration-accent decoration-2 underline-offset-4 group-hover:underline">
+                        {c.title}
+                      </span>
+                    </Link>
+                    <a href={c.url} target="_blank" rel="noopener noreferrer"
+                       aria-label={`Read ${c.source}'s original (opens in a new tab)`}
+                       className="flex h-9 w-9 shrink-0 items-center justify-center border border-ink transition-colors duration-200 hover:bg-ink hover:text-paper">
+                      <ArrowUpRight className="h-4 w-4" strokeWidth={1.5} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {article.tags?.length > 0 && (
             <section className="border-t-4 border-ink pt-4">
               <Kicker className="mb-2 block text-ink">Filed under</Kicker>

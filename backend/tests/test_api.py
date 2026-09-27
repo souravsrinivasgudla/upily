@@ -116,3 +116,41 @@ def test_rate_limit_key_cannot_be_spoofed():
     from starlette.requests import Request
     req = Request({"type": "http", "headers": [(b"x-forwarded-for", b"1.2.3.4, 203.0.113.9")], "client": ("10.0.0.1", 1)})
     assert deps.client_ip(req) == "203.0.113.9"   # the proxy-appended entry, not the client-supplied one
+
+
+def test_story_groups_collapse_with_coverage(client, monkeypatch):
+    async def fetch_same_story(self, category):
+        base = {"published_at": datetime.now(timezone.utc), "category": category,
+                "content": "Pumpkin enzyme weakens peanut allergy proteins in lab tests.",
+                "summary": "Pumpkin enzyme and peanut allergy."}
+        return [
+            {**base, "title": "Pumpkin-derived enzyme weakens peanut allergy proteins",
+             "url": "https://a.example/pumpkin", "source": "Phys.org"},
+            {**base, "title": "Enzyme from pumpkins weakens peanut allergy proteins, study finds",
+             "url": "https://b.example/pumpkin", "source": "New Scientist"},
+        ]
+
+    monkeypatch.setattr(orchestrator.OrchestratorAgent, "_fetch", fetch_same_story)
+    assert client.post("/api/news/refresh/science").json()["added"] == 2
+
+    stories = client.get("/api/news", params={"category": "science"}).json()["articles"]
+    assert len(stories) == 1                      # two outlets, one story
+    assert stories[0]["coverage_count"] == 2
+    other = stories[0]["coverage"][0]
+    assert other["source"] in {"Phys.org", "New Scientist"} and other["source"] != stories[0]["source"]
+
+    detail = client.get(f"/api/news/{stories[0]['id']}").json()
+    assert detail["coverage"][0]["id"] == other["id"]
+
+
+def test_migrations_match_models(client):
+    from alembic.autogenerate import compare_metadata
+    from alembic.migration import MigrationContext
+    from sqlalchemy import create_engine
+    from db.database import Base, DATABASE_URL
+
+    eng = create_engine(DATABASE_URL.replace("+aiosqlite", ""))
+    with eng.connect() as conn:
+        assert compare_metadata(MigrationContext.configure(conn), Base.metadata) == []
+        assert conn.exec_driver_sql("select version_num from alembic_version").scalar() == "0002"
+    eng.dispose()

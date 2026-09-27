@@ -20,6 +20,14 @@ export default function ArticleCard({ article, variant = 'standard', className }
       <Kicker className="text-ink">{article.category}</Kicker>
       <span aria-hidden="true" className="text-neutral-400">/</span>
       <Kicker>{article.source}</Kicker>
+      {article.coverage_count > 1 && (
+        <span
+          className="border border-ink px-1.5 py-px font-mono text-[10px] uppercase tracking-widest text-ink"
+          title={`Also reported by ${(article.coverage || []).map(c => c.source).join(', ')}`}
+        >
+          {article.coverage_count} outlets
+        </span>
+      )}
       {when && <Kicker className="ml-auto">{when}</Kicker>}
     </div>
   )

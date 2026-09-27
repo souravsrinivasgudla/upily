@@ -135,7 +135,16 @@ async def search_memory(query: str, db: AsyncSession, top_k: int = 5) -> List[Di
         picked += [a for a in ranked if a not in picked]
         return [_hit(a, 0.5) for a in picked[:top_k]]
 
-    return [_hit(a, s) for s, a in rank(query, rows)[:top_k]]
+    hits, groups = [], set()
+    for s, a in rank(query, rows):
+        key = a.cluster_id if a.cluster_id is not None else -a.id
+        if key in groups:        # another outlet's version of a story already included
+            continue
+        groups.add(key)
+        hits.append(_hit(a, s))
+        if len(hits) == top_k:
+            break
+    return hits
 
 
 def _hit(a: Article, score: float) -> Dict[str, Any]:

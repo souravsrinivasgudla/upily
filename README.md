@@ -130,12 +130,50 @@ Every `FETCH_INTERVAL_HOURS` (default 4), the pipeline runs these steps for each
 3. **Rank** the rest with the LLM.
 4. **Store** the top `ARTICLES_PER_CATEGORY`.
 5. **Clean up:** delete stories older than `RETENTION_HOURS` and keep at most `MAX_STORED_PER_CATEGORY` per section.
-6. **Analyse** the new stories. This stops after 3 LLM failures in a row, so a bad key doesn't waste calls.
+6. **Group** stories that different outlets wrote about the same event (see below).
+7. **Analyse** the new stories. When the LLM provider rate-limits, the client waits as long as the provider asks and retries. The run stops after 3 other LLM failures in a row, so a bad key doesn't waste calls.
 
 Other behaviour:
 
 - On startup, the pipeline runs only if the stored news is older than the interval.
 - All writes share one lock, so the scheduled runs and manual refreshes can't collide.
+
+## Story grouping
+
+When several outlets cover the same event, Upily shows it once, with an "N outlets" badge and an **Also reported by** list on the article page. The chat's retrieval also returns one hit per story, so its context covers distinct stories.
+
+`services/clustering.py` compares every pair of recent stories. A pair is grouped when all three hold:
+- They come from **different outlets**. The same outlet's stories on one topic were the main source of false matches.
+- Their headlines share **at least two** terms.
+- Their **TF-IDF cosine similarity** (headline weighted double, plus the source's lead text) is at least 0.42.
+
+Groups join transitively (union-find). Each group's id is its smallest article id, so it stays stable as new coverage arrives. The 0.42 threshold was chosen from a sweep over hand-labelled pairs; see the next section.
+
+## Evaluation
+
+`backend/evals/` measures retrieval and grouping quality against a frozen snapshot of stories, so results are reproducible as the live news changes.
+
+```bash
+cd backend
+python -m evals.run_eval                 # offline: no network, no LLM (~2s)
+python -m evals.run_eval --answers 5     # + LLM-graded end-to-end answers
+python -m evals.build_dataset            # rebuild the snapshot from the current DB
+```
+
+Latest results are in [`backend/evals/results/latest.md`](backend/evals/results/latest.md), and the method and findings are in [`backend/evals/README.md`](backend/evals/README.md). A pytest gate (`tests/test_evals.py`) fails if the scores drop below their floors.
+
+## Database migrations
+
+The schema is managed with **Alembic** (`backend/migrations/`). The app applies pending migrations automatically at startup. A database created before migrations existed is detected and marked as the baseline, so no data is lost.
+
+```bash
+cd backend
+alembic upgrade head                         # apply migrations
+alembic revision --autogenerate -m "add x"   # after changing db/models.py
+alembic downgrade -1                         # roll back one step
+```
+
+A test (`test_migrations_match_models`) fails if `db/models.py` and the migrations drift apart.
 
 ## Project layout
 
@@ -147,10 +185,12 @@ backend/
   api/deps.py        Rate limiting and admin-token auth
   agents/            orchestrator (pipeline), news_agent (ranking), summarizer_agent, qa_agent
   services/          news_service (feeds and APIs), llm_service, search_service,
-                     dates, text, tasks
-  db/                Engine and the Article model
+                     clustering (story grouping), dates, text, tasks
+  db/                Engine, migrations runner and the Article model
+  migrations/        Alembic migrations (0001 baseline, 0002 story groups)
+  evals/             Retrieval and grouping evaluation (dataset, runner, results)
   scheduler/         APScheduler job
-  tests/             pytest suite
+  tests/             pytest suite, including the evaluation quality gate
 frontend/
   src/components/    ui.jsx (design primitives), Layout, Ticker, ArticleCard, ChatPanel, ErrorBoundary
   src/pages/         Dashboard (front page), ArticlePage, TrendingPage (The Pulse), ChatPage

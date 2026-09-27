@@ -12,10 +12,13 @@ export const CATEGORIES = ['technology', 'india', 'world', 'science', 'business'
 const LIMIT = 20
 const ANALYSIS_RECHECK_MS = 25000
 
-/** Lead = most important story; ties go to the newest (the API list is newest-first). */
+/** A story several outlets are covering outranks one outlet's scoop of equal importance. */
+const leadScore = (a) => (a.importance_score ?? 0) + 0.05 * Math.min((a.coverage_count ?? 1) - 1, 4)
+
+/** Lead = highest lead score; ties go to the newest (the API list is newest-first). */
 function splitFrontPage(articles) {
   if (articles.length === 0) return { lead: null, side: [], rest: [] }
-  const lead = articles.reduce((best, a) => ((a.importance_score ?? 0) > (best.importance_score ?? 0) ? a : best), articles[0])
+  const lead = articles.reduce((best, a) => (leadScore(a) > leadScore(best) ? a : best), articles[0])
   const others = articles.filter(a => a.id !== lead.id)
   return { lead, side: others.slice(0, 3), rest: others.slice(3) }
 }

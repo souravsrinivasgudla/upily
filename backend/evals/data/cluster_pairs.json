@@ -1,0 +1,282 @@
+[
+ {
+  "a": 79,
+  "b": 84,
+  "a_title": "[Deadline] ‘Star Wars’ Is Continuing Skywalker Saga With ‘Spider-Man’ Director Jon Watts",
+  "b_title": "[Variety] Jon Watts to Direct Next ‘Star Wars’ Movie",
+  "same_story": true
+ },
+ {
+  "a": 3,
+  "b": 72,
+  "a_title": "[The Verge] Apple hit with $5.7 billion in damages over haptic patents",
+  "b_title": "[US Top News and Analysis] Apple faces $5.7 billion patent infringement verdict over iPhone and Apple Watch haptics",
+  "same_story": true
+ },
+ {
+  "a": 33,
+  "b": 34,
+  "a_title": "[Variety] Tucker Carlson Returns to ‘SNL’ to Review ‘The Odyssey,’ Gender-Neutral ‘Spider-Man’ and Left-Wing ‘Obsession’",
+  "b_title": "[Deadline] ‘SNL’s Weekend Update Mocks Paramount+, ‘Spider-Man’, ‘The Odyssey’ & ‘Obsession’",
+  "same_story": true
+ },
+ {
+  "a": 49,
+  "b": 75,
+  "a_title": "[WIRED] Some Pancreatic Cells Are Just One Genetic Tweak Away From Treating Diabetes",
+  "b_title": "[The Guardian] Only 3% of US sickle cell patients receive red blood cell exchange for disease, researchers find",
+  "same_story": false
+ },
+ {
+  "a": 57,
+  "b": 59,
+  "a_title": "[The New York Times] 27 killed in mass shootings in South Africa overnight",
+  "b_title": "[BBC News] Two mass shootings in South Africa leave 27 dead",
+  "same_story": true
+ },
+ {
+  "a": 67,
+  "b": 68,
+  "a_title": "[The Guardian] Trump rejects Iran’s seven-day peace deal to reopen strait of Hormuz",
+  "b_title": "[US Top News and Analysis] Trump rejects Iran's conditional ceasefire proposal, WSJ reports, as Saudi coalition intercepts projectiles",
+  "same_story": true
+ },
+ {
+  "a": 38,
+  "b": 40,
+  "a_title": "[BBC News] Internationals hold three-point Presidents Cup lead over US",
+  "b_title": "[SkySports | News] Internationals eye Presidents Cup history as they take lead into singles",
+  "same_story": true
+ },
+ {
+  "a": 43,
+  "b": 70,
+  "a_title": "[The Verge] OpenAI pauses training of its ‘most capable models’",
+  "b_title": "[US Top News and Analysis] OpenAI expands review of model behavior after more rogue agent incidents emerge",
+  "same_story": true
+ },
+ {
+  "a": 73,
+  "b": 76,
+  "a_title": "[Healthline News RSS Feed] FDA Approves Lilly’s New Oral Combo Pill for Common Breast Cancer Mutation",
+  "b_title": "[Healthline News RSS Feed] Her Bloating Turned Out to Be Colon Cancer at 37. Then She Learned She Had a BRCA2 Mutation",
+  "same_story": false
+ },
+ {
+  "a": 73,
+  "b": 78,
+  "a_title": "[Healthline News RSS Feed] FDA Approves Lilly’s New Oral Combo Pill for Common Breast Cancer Mutation",
+  "b_title": "[Healthline News RSS Feed] ‘The Pitt’ Star Katherine LaNasa Says Early Breast Cancer Detection Saved Her Life",
+  "same_story": false
+ },
+ {
+  "a": 32,
+  "b": 36,
+  "a_title": "[Deadline] ‘Saturday Night Live’: Jalen Brunson Dunks On ‘High School Musical’ Lead, Katseye Crowns Awkward New Girl Group In Season 52 Premiere",
+  "b_title": "[Deadline] ‘SNL’ Season 52 Premiere Delayed In Many Areas Due To College Football",
+  "same_story": false
+ },
+ {
+  "a": 7,
+  "b": 57,
+  "a_title": "[Al Jazeera] Several killed in South Africa shooting",
+  "b_title": "[The New York Times] 27 killed in mass shootings in South Africa overnight",
+  "same_story": true
+ },
+ {
+  "a": 81,
+  "b": 82,
+  "a_title": "[Variety] ‘Godzilla Minus Zero’ Director Champions Franchise’s First R Rating as Sequel Rocks NYFF at World Premiere: ‘Censoring’ the Action ‘Was Not an Option’",
+  "b_title": "[The Hollywood Reporter] ‘Godzilla Minus Zero’ Review: Monster Movie Genius Takashi Yamazaki Returns With a Crackling Kaiju Epic Every Bit as Exciting as Its Predecessor",
+  "same_story": true
+ },
+ {
+  "a": 10,
+  "b": 56,
+  "a_title": "[BBC News] Bangkok roads submerged as flood disaster declared",
+  "b_title": "[Al Jazeera] Floods and landslides kill at least 56 people in India, 12 in Nepal",
+  "same_story": false
+ },
+ {
+  "a": 37,
+  "b": 41,
+  "a_title": "[BBC News] White casts doubt on Fury-Joshua after 24 hours of chaos",
+  "b_title": "[SkySports | News] Fury: There's a one per cent chance of AJ fight happening",
+  "same_story": true
+ },
+ {
+  "a": 76,
+  "b": 78,
+  "a_title": "[Healthline News RSS Feed] Her Bloating Turned Out to Be Colon Cancer at 37. Then She Learned She Had a BRCA2 Mutation",
+  "b_title": "[Healthline News RSS Feed] ‘The Pitt’ Star Katherine LaNasa Says Early Breast Cancer Detection Saved Her Life",
+  "same_story": false
+ },
+ {
+  "a": 40,
+  "b": 86,
+  "a_title": "[SkySports | News] Internationals eye Presidents Cup history as they take lead into singles",
+  "b_title": "[BBC News] Alcaraz wins after saving match points as Europe lead Laver Cup",
+  "same_story": false
+ },
+ {
+  "a": 38,
+  "b": 86,
+  "a_title": "[BBC News] Internationals hold three-point Presidents Cup lead over US",
+  "b_title": "[BBC News] Alcaraz wins after saving match points as Europe lead Laver Cup",
+  "same_story": false
+ },
+ {
+  "a": 76,
+  "b": 77,
+  "a_title": "[Healthline News RSS Feed] Her Bloating Turned Out to Be Colon Cancer at 37. Then She Learned She Had a BRCA2 Mutation",
+  "b_title": "[NPR Topics: Health] From professor to patient: One man's journey on the frontier of lung cancer treatment",
+  "same_story": false
+ },
+ {
+  "a": 31,
+  "b": 36,
+  "a_title": "[Deadline] How ‘SNL’ Introduced Season 52’s New Cast Members Saidah Belo-Osagie & Grace Reiter",
+  "b_title": "[Deadline] ‘SNL’ Season 52 Premiere Delayed In Many Areas Due To College Football",
+  "same_story": false
+ },
+ {
+  "a": 77,
+  "b": 78,
+  "a_title": "[NPR Topics: Health] From professor to patient: One man's journey on the frontier of lung cancer treatment",
+  "b_title": "[Healthline News RSS Feed] ‘The Pitt’ Star Katherine LaNasa Says Early Breast Cancer Detection Saved Her Life",
+  "same_story": false
+ },
+ {
+  "a": 58,
+  "b": 60,
+  "a_title": "[Al Jazeera] Israeli minister Bezalel Smotrich calls for war in occupied West Bank",
+  "b_title": "[The Guardian] ‘Hell on earth’: last residents eat weeds to survive in Russian-occupied Oleshky",
+  "same_story": false
+ },
+ {
+  "a": 10,
+  "b": 11,
+  "a_title": "[BBC News] Bangkok roads submerged as flood disaster declared",
+  "b_title": "[BBC News] Nor'easter brings flooding as New York and New Jersey declare emergency",
+  "same_story": false
+ },
+ {
+  "a": 73,
+  "b": 77,
+  "a_title": "[Healthline News RSS Feed] FDA Approves Lilly’s New Oral Combo Pill for Common Breast Cancer Mutation",
+  "b_title": "[NPR Topics: Health] From professor to patient: One man's journey on the frontier of lung cancer treatment",
+  "same_story": false
+ },
+ {
+  "a": 4,
+  "b": 69,
+  "a_title": "[TechCrunch] Insurers claim AI is already increasing healthcare costs",
+  "b_title": "[US Top News and Analysis] Debt-hungry AI companies face increased risk as bond yields spike",
+  "same_story": false
+ },
+ {
+  "a": 7,
+  "b": 59,
+  "a_title": "[Al Jazeera] Several killed in South Africa shooting",
+  "b_title": "[BBC News] Two mass shootings in South Africa leave 27 dead",
+  "same_story": true
+ },
+ {
+  "a": 27,
+  "b": 30,
+  "a_title": "[The New York Times] ‘Zombified’ C.D.C., Hobbled by Cuts, Struggles to Fulfill Scientific Mission",
+  "b_title": "[NPR Topics: Health] Meal deliveries can save money and improve health. Will they survive Medicaid cuts?",
+  "same_story": false
+ },
+ {
+  "a": 2,
+  "b": 92,
+  "a_title": "[TechCrunch] Google tests buying from Walmart-owned Flipkart through Gemini and AI Mode in India",
+  "b_title": "[The Hindu] EESL to showcase India’s energy-efficiency initiatives in Germany",
+  "same_story": false
+ },
+ {
+  "a": 75,
+  "b": 77,
+  "a_title": "[The Guardian] Only 3% of US sickle cell patients receive red blood cell exchange for disease, researchers find",
+  "b_title": "[NPR Topics: Health] From professor to patient: One man's journey on the frontier of lung cancer treatment",
+  "same_story": false
+ },
+ {
+  "a": 11,
+  "b": 56,
+  "a_title": "[BBC News] Nor'easter brings flooding as New York and New Jersey declare emergency",
+  "b_title": "[Al Jazeera] Floods and landslides kill at least 56 people in India, 12 in Nepal",
+  "same_story": false
+ },
+ {
+  "a": 39,
+  "b": 40,
+  "a_title": "[SkySports | News] Coughlin makes LPGA Tour history with INCREDIBLE birdie streak",
+  "b_title": "[SkySports | News] Internationals eye Presidents Cup history as they take lead into singles",
+  "same_story": false
+ },
+ {
+  "a": 35,
+  "b": 90,
+  "a_title": "[Variety] Here’s Where to Livestream Takuma Inoue vs. Tenshin Nasukawa 2 Boxing Online",
+  "b_title": "[SkySports | News] Alpine condemn online abuse since Colapinto crash, Norris remarks",
+  "same_story": false
+ },
+ {
+  "a": 56,
+  "b": 92,
+  "a_title": "[Al Jazeera] Floods and landslides kill at least 56 people in India, 12 in Nepal",
+  "b_title": "[The Hindu] EESL to showcase India’s energy-efficiency initiatives in Germany",
+  "same_story": false
+ },
+ {
+  "a": 80,
+  "b": 83,
+  "a_title": "[Deadline] Film Execs Ponder Federal Film Tax Credit Impact, Timeline & Potential Price Rises — Zurich Summit",
+  "b_title": "[Variety] Jia Zhangke Readies Zhao Tao Road Movie ‘Mamma Dunhuang,’ Rules Out AI in Production (EXCLUSIVE)",
+  "same_story": false
+ },
+ {
+  "a": 26,
+  "b": 90,
+  "a_title": "[The Guardian] Pennsylvania measles outbreak spreads, with 55 new cases reported since Wednesday",
+  "b_title": "[SkySports | News] Alpine condemn online abuse since Colapinto crash, Norris remarks",
+  "same_story": false
+ },
+ {
+  "a": 31,
+  "b": 32,
+  "a_title": "[Deadline] How ‘SNL’ Introduced Season 52’s New Cast Members Saidah Belo-Osagie & Grace Reiter",
+  "b_title": "[Deadline] ‘Saturday Night Live’: Jalen Brunson Dunks On ‘High School Musical’ Lead, Katseye Crowns Awkward New Girl Group In Season 52 Premiere",
+  "same_story": false
+ },
+ {
+  "a": 91,
+  "b": 95,
+  "a_title": "[The Hindu] SIR row: Chavan seeks probe into ECI working; Raut says government's sole agenda is to protect CEC",
+  "b_title": "[The Hindu] ‘Need to work in tandem’: Telangana Chief Justice on trafficking, bonded labour",
+  "same_story": false
+ },
+ {
+  "a": 1,
+  "b": 18,
+  "a_title": "[TechCrunch] PNOE’s new face mask wants to make lab-grade breath testing a self-serve affair",
+  "b_title": "[Phys.org - latest science and technology news stories] Pumpkin-derived enzyme weakens peanut proteins' binding to allergy antibodies in lab tests",
+  "same_story": false
+ },
+ {
+  "a": 35,
+  "b": 42,
+  "a_title": "[Variety] Here’s Where to Livestream Takuma Inoue vs. Tenshin Nasukawa 2 Boxing Online",
+  "b_title": "[BBC News] Fisher outpoints bloodied Pirotton on Zuffa debut",
+  "same_story": false
+ },
+ {
+  "a": 45,
+  "b": 48,
+  "a_title": "[TechCrunch] Meta and YouTube say they will run ads for ‘Musk’ documentary after all",
+  "b_title": "[WIRED] Meta’s Muse Is Adults-Only. Why Does It Look Like a Kids’ Toy?",
+  "same_story": false
+ }
+]

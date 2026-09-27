@@ -38,6 +38,8 @@ class Article(Base):
     importance_score = Column(Float, default=0.5)
     is_trending      = Column(Boolean, default=False)
     tags             = Column(JSON, default=list)
+    # Articles about the same event (across outlets) share a cluster_id — see services/clustering.py
+    cluster_id       = Column(Integer, index=True)
 
     @property
     def is_analyzed(self) -> bool:
@@ -57,6 +59,7 @@ class Article(Base):
             "is_trending":      bool(self.is_trending),
             "tags":             self.tags or [],
             "is_analyzed":      self.is_analyzed,
+            "cluster_id":       self.cluster_id,
         }
         if include_content:
             data.update({

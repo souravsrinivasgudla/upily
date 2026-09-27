@@ -9,7 +9,8 @@ from api.routes import chat, health, news, trending
 from config import settings
 from db.database import engine, init_db
 from scheduler.daily_pipeline import start_scheduler
-from services.tasks import cancel_all
+from services.clustering import recluster
+from services.tasks import cancel_all, spawn
 
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
@@ -23,6 +24,7 @@ log = logging.getLogger("upily")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    spawn(recluster(), name="initial-grouping")   # group stories stored before this version
     scheduler = await start_scheduler()
     log.info("%s v%s started (LLM: %s%s)", settings.APP_NAME, settings.APP_VERSION,
              settings.LLM_PROVIDER, "" if settings.llm_configured else " — NOT CONFIGURED")
