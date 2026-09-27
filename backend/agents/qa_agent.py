@@ -96,11 +96,15 @@ def build_prompt(
         )
 
     if memory:
-        lines = "\n".join(
-            f"- [{r.get('category') or 'news'} · {r.get('source') or 'Upily'}] {r['title']}: {r['summary']}"
-            for r in memory[:5]
-        )
-        parts.append(f"RELEVANT STORED ARTICLES:\n{lines}")
+        blocks = []
+        for i, r in enumerate(memory[:5]):
+            head = (f"- [{r.get('category') or 'news'} · {r.get('source') or 'Upily'}"
+                    f"{' · ' + r['published_at'][:10] if r.get('published_at') else ''}] {r['title']}: {r['summary']}")
+            # Full detail for the best three matches; headlines only for the rest
+            if i < 3 and r.get("excerpt"):
+                head += f"\n  Detail: {r['excerpt']}"
+            blocks.append(head)
+        parts.append("RELEVANT STORED ARTICLES:\n" + "\n".join(blocks))
 
     if web:
         lines = "\n".join(f"- {r['title']}: {r['snippet']}" for r in web[:3])

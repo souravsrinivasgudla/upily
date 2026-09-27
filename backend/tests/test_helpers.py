@@ -92,3 +92,45 @@ def test_belongs_elsewhere():
     assert not belongs_elsewhere(sports, "sports")
     vague = {"title": "A quiet afternoon", "content": ""}
     assert not belongs_elsewhere(vague, "science")
+
+
+# ── retrieval (RAG) ───────────────────────────────────────────────────────────
+
+from types import SimpleNamespace
+
+from services.search_service import rank, tokenize
+
+
+def _a(i, title, category="world", summary=""):
+    return SimpleNamespace(id=i, title=title, category=category, summary=summary, raw_content="",
+                           tags=[], deep_explanation=None, importance_score=0.5)
+
+
+CORPUS = [
+    _a(1, "Internationals hold three-point Presidents Cup lead over US", "sports"),
+    _a(2, "The surprising reasons China is skeptical of A.I. safety calls", "world"),
+    _a(3, "Decap is the man behind the drums behind your favorite song", "entertainment"),
+    _a(4, "'Zombified' C.D.C., hobbled by cuts, struggles to fulfill scientific mission", "health"),
+    _a(5, "Black hole jets reach far beyond galaxies", "science"),
+]
+
+
+def test_tokenize_normalises_acronyms_and_plurals():
+    assert tokenize("The C.D.C.'s songs") == ["cdc", "song"]
+
+
+@pytest.mark.parametrize("question, expected", [
+    ("How is the International team doing against the United States in the Presidents Cup?", 1),
+    ("Who is Decap and what does he do on popular songs?", 3),
+    ("How have budget cuts affected the CDC?", 4),
+])
+def test_rank_finds_the_right_story(question, expected):
+    assert rank(question, CORPUS)[0][1].id == expected
+
+
+def test_rank_returns_nothing_for_uncovered_topics():
+    assert rank("What happened with the Mars colony vote?", CORPUS) == []
+
+
+def test_section_browse():
+    assert [a.id for _, a in rank("science news", CORPUS)] == [5]
