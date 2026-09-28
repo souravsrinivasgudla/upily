@@ -20,7 +20,11 @@ SYSTEM = (
     "You are Upily's news assistant. Answer questions accurately and concisely with helpful context. "
     "Prefer the provided context; mention sources naturally when you use them. "
     "For questions about current or recent events, rely ONLY on the provided context. Never invent "
-    "headlines, events, dates, names or figures. If the context doesn't cover what was asked, say "
+    "headlines, events, dates, names or figures. Use names, numbers and details exactly as the context "
+    "gives them — never expand or guess them (if a story says only 'Scheffler', write 'Scheffler', not a "
+    "first name you assume). Don't speculate about causes or details the stories don't state; if the "
+    "reader asks for something the stories don't say, say that it isn't reported. "
+    "If the context doesn't cover what was asked, say "
     "Upily has no coverage of it right now and suggest the relevant section. For background or "
     "explanations you may use general knowledge, but say when something may be out of date. "
     "Write plain text: short paragraphs or simple '-' lists. No markdown tables, headings or bold. "
@@ -53,7 +57,8 @@ class QAAgent:
             web_hits = await search_web(question, max_results=3)
 
         prompt = build_prompt(question, article_context, memory_hits, web_hits, history or [])
-        answer_text = clean_answer(await llm_service.chat(prompt, system=SYSTEM, max_tokens=800))
+        # Low temperature: answers should restate the stories, not improvise around them
+        answer_text = clean_answer(await llm_service.chat(prompt, system=SYSTEM, max_tokens=800, temperature=0.1))
 
         sources = []
         if article_context:

@@ -1,4 +1,4 @@
-# Upily evaluation — 2026-09-27
+# Upily evaluation — 2026-09-28
 
 Corpus: 94 stories (frozen snapshot in `evals/data/`).
 
@@ -27,13 +27,3 @@ Unanswerable questions correctly returning nothing: **67%** (12 questions).
 | 0.50 | 100% | 82% | 0.90 |
 | 0.55 | 100% | 55% | 0.71 |
 | 0.60 | 100% | 45% | 0.62 |
-
-## End-to-end answers (LLM-graded)
-
-| Questions | n | correct | abstained | wrong | hallucinated |
-|---|---|---|---|---|---|
-| easy | 5 | 80% | 0% | 0% | 20% |
-| hard | 5 | 100% | 0% | 0% | 0% |
-| negative | 12 | 0% | 100% | 0% | 0% |
-
-For unanswerable questions (negative), *abstained* is the correct outcome.

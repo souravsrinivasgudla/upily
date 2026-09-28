@@ -161,3 +161,36 @@ def test_rate_limit_wait_is_read_from_the_error():
     assert abs(_retry_after(err) - 3.3275) < 1e-6
     assert _retry_after(Exception("try again in 1m5.5s")) == 30.0   # capped
     assert _retry_after(Exception("no hint")) == 5.5
+
+
+def test_invented_name_candidates_are_flagged():
+    from agents.summarizer_agent import invented_names
+    source = "Scheffler and Thomas shine for USA in incredible Presidents Cup victory! Team USA dominated."
+    text = "Collin Scheffler and Tommy Thomas won for Team USA at the Presidents Cup."
+    assert invented_names(text, source) == ["Collin Scheffler", "Tommy Thomas"]
+    assert invented_names("Scottie Scheffler won.", "Scottie Scheffler won the Masters") == []   # stated in full
+
+
+def test_name_check_asks_the_model_and_accepts_only_small_edits(monkeypatch):
+    import asyncio
+    from agents import summarizer_agent as sa
+
+    analysis = {"summary": "Collin Scheffler starred as the US won the Ryder Cup rematch.",
+                "deep_explanation": "Rising star Collin Scheffler led the way.", "why_it_matters": "Big win.",
+                "background_info": "", "tags": []}
+    calls = []
+
+    async def fake_chat(prompt, **kw):
+        calls.append(prompt)
+        return ('{"summary": "Scheffler starred as the US won the Ryder Cup rematch.",'
+                ' "deep_explanation": "Rising star Scheffler led the way.", "why_it_matters": "Big win."}')
+
+    monkeypatch.setattr(sa.llm_service, "chat", fake_chat)
+    fixed = asyncio.run(sa.SummarizerAgent()._verify_names(analysis, "Scheffler shines for USA", "Scheffler won."))
+    assert fixed["summary"] == "Scheffler starred as the US won the Ryder Cup rematch."
+    assert "Collin Scheffler" in calls[0]
+
+    calls.clear()
+    clean = {**analysis, "summary": "Scheffler starred.", "deep_explanation": "Scheffler led."}
+    assert asyncio.run(sa.SummarizerAgent()._verify_names(clean, "Scheffler shines", "Scheffler won.")) == clean
+    assert calls == []   # nothing flagged → no extra LLM call

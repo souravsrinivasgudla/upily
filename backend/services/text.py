@@ -55,6 +55,18 @@ def extract_json(raw: Optional[str], expect: type = dict, items: Optional[type] 
     return None
 
 
+# LLMs often emit typographic look-alikes (narrow no-break spaces, non-breaking hyphens).
+# They render fine but break text matching (search, name checks), so store plain forms.
+_LOOKALIKES = str.maketrans({
+    " ": " ", " ": " ", " ": " ", " ": " ", " ": " ",
+    "‑": "-", "‐": "-",
+})
+
+
+def normalize_chars(text: str) -> str:
+    return text.translate(_LOOKALIKES)
+
+
 def as_text(value: Any, max_len: int = 6000) -> str:
     """Coerce LLM field values (str / list / dict / None) to clean display text."""
     if value is None:
@@ -63,4 +75,4 @@ def as_text(value: Any, max_len: int = 6000) -> str:
         value = "\n\n".join(as_text(v, max_len) for v in value if v)
     elif isinstance(value, dict):
         value = "\n\n".join(as_text(v, max_len) for v in value.values() if v)
-    return truncate(str(value).strip(), max_len)
+    return truncate(normalize_chars(str(value)).strip(), max_len)
