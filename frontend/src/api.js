@@ -10,7 +10,7 @@ const apiSlow = axios.create({ baseURL: API_BASE, timeout: 90000 })
 
 // If VITE_API_URL is missing in a deployed build, /api/* falls through to the SPA's
 // index.html (HTTP 200). Treat an HTML answer as a configuration error, not empty data.
-const MISCONFIGURED = 'The Upily server address is not configured for this site (VITE_API_URL).'
+const MISCONFIGURED = 'This site could not reach the Upily API: the server address (VITE_API_URL) is missing, wrong, or the backend is not running.'
 for (const instance of [api, apiSlow]) {
   instance.interceptors.response.use(res => {
     if (String(res.headers?.['content-type'] || '').includes('text/html')) {

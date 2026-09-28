@@ -117,7 +117,7 @@ class OrchestratorAgent:
 
     # ── AI analysis ───────────────────────────────────────────────────────────
 
-    async def analyze_pending(self, ids: Optional[List[int]] = None, limit: int = 60) -> int:
+    async def analyze_pending(self, ids: Optional[List[int]] = None, limit: Optional[int] = None) -> int:
         """Analyse stored articles that have no analysis yet. Returns how many succeeded."""
         if not llm_service.is_llm_configured():
             return 0
@@ -129,7 +129,8 @@ class OrchestratorAgent:
                 q = q.where(Article.category != "local")
             if ids:
                 q = q.where(Article.id.in_(ids))
-            q = q.order_by(desc(Article.importance_score), desc(Article.fetched_at)).limit(limit)
+            q = q.order_by(desc(Article.importance_score), desc(Article.fetched_at)).limit(
+                limit or settings.BACKGROUND_ANALYSIS_LIMIT)
             pending = (await db.execute(q)).scalars().all()
 
         done, consecutive_failures = 0, 0
@@ -141,7 +142,9 @@ class OrchestratorAgent:
                     done += 1
                 consecutive_failures = 0
             except llm_service.LLMRateLimited as e:
-                log.warning("Analysis paused: %s — the rest waits for the next run", e)
+                # Pick up where we left off once the provider's back-off is over
+                log.warning("Analysis paused: %s — resuming automatically afterwards", e)
+                spawn(self._resume_after(e.seconds + 5, ids), name="analysis-resume")
                 break
             except llm_service.LLMError as e:
                 log.warning("Analysis failed for article %s: %s", article_id, e)
@@ -154,6 +157,10 @@ class OrchestratorAgent:
             except Exception as e:   # e.g. article deleted by cleanup mid-analysis
                 log.warning("Analysis skipped for article %s: %s", article_id, type(e).__name__)
         return done
+
+    async def _resume_after(self, seconds: float, ids: Optional[List[int]]) -> None:
+        await asyncio.sleep(seconds)
+        await self.analyze_pending(ids=ids)
 
     async def analyze_article(self, article_id: int) -> Optional[Article]:
         """Analyse one article (idempotent, one LLM call per article even if requested twice)."""

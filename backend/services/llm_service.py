@@ -131,7 +131,8 @@ async def chat(
             if wait > MAX_RATE_LIMIT_SLEEP:
                 # A long back-off (daily cap, big token debt): stop everyone, don't spin
                 _paused_until = time.monotonic() + wait
-                log.warning("LLM rate limit: pausing AI calls for %.0fs", wait)
+                log.warning("LLM rate limit: pausing AI calls for %.0fs (provider said: %s)",
+                            wait, str(last_error)[:240])
                 raise LLMRateLimited(wait) from last_error
             if rate_limit_waits < MAX_RATE_LIMIT_WAITS:
                 # Per-minute limit: wait as long as the provider asks, then retry

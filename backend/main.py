@@ -25,7 +25,7 @@ async def _catch_up() -> None:
     """Group stories and finish any analysis a previous run didn't complete (e.g. rate limits)."""
     from agents.orchestrator import OrchestratorAgent
     await recluster()
-    done = await OrchestratorAgent().analyze_pending(limit=200)
+    done = await OrchestratorAgent().analyze_pending()
     if done:
         log.info("Startup catch-up: analysed %d stories", done)
 

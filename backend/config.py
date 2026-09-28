@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # Gap between background AI analyses. Each costs ~2-3k tokens; Groq's free tier allows
     # 8k tokens/min, so ~20 s keeps background work under the limit with room for chat.
     ANALYSIS_PACE_SECONDS: float = 20.0
+    # Background analyses per run (most important first). Free LLM tiers also cap tokens
+    # per DAY (Groq: ~200k ≈ 80 analyses), so the rest are analysed when a reader opens them.
+    BACKGROUND_ANALYSIS_LIMIT: int = 20
 
     @field_validator("LLM_PROVIDER")
     @classmethod
