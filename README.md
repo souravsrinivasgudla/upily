@@ -187,6 +187,42 @@ python -m evals.build_dataset            # rebuild the snapshot from the current
 
 Latest results are in [`backend/evals/results/latest.md`](backend/evals/results/latest.md), and the method and findings are in [`backend/evals/README.md`](backend/evals/README.md). A pytest gate (`tests/test_evals.py`) fails if the scores drop below their floors.
 
+## Local PostgreSQL (Docker) + DBeaver
+
+Local development runs on PostgreSQL 16 in Docker, the same database engine as production.
+
+```bash
+cp .env.example .env            # repo root; set a POSTGRES_PASSWORD
+docker compose up -d            # PostgreSQL on 127.0.0.1:5433 (5433 avoids clashing with other local Postgres)
+# backend/.env:
+#   DATABASE_URL=postgresql://upily:<POSTGRES_PASSWORD>@localhost:5433/upily
+```
+
+- The backend applies the Alembic migrations on startup, or you can run `alembic upgrade head` yourself.
+- Data persists in the `upily-pgdata` Docker volume. `docker compose down -v` deletes it.
+- To move stories from an old SQLite file, run `python -m scripts.copy_sqlite_to_postgres` from `backend/`. It keeps ids and resets the id sequence.
+- Without `DATABASE_URL`, the backend still falls back to SQLite (`backend/upily.db`).
+
+**DBeaver:** create a new connection with **PostgreSQL** and these settings:
+
+| Setting | Value |
+|---|---|
+| Host | `localhost` |
+| Port | `5433` |
+| Database | `upily` |
+| Username | `upily` |
+| Password | `POSTGRES_PASSWORD` from the repo-root `.env` |
+
+The stories are in `public.articles`, and `public.alembic_version` shows the schema revision.
+
+**Tests on PostgreSQL:** the suite runs on SQLite by default. To run it against the `upily_test` database, which is wiped each run, use:
+
+```bash
+TEST_DATABASE_URL=postgresql://upily:<password>@localhost:5433/upily_test pytest
+```
+
+The suite refuses any database whose name doesn't end in `_test`.
+
 ## Database migrations
 
 The schema is managed with **Alembic** (`backend/migrations/`). The app applies pending migrations automatically at startup. A database created before migrations existed is detected and marked as the baseline, so no data is lost.

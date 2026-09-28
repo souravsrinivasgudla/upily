@@ -144,13 +144,22 @@ def test_story_groups_collapse_with_coverage(client, monkeypatch):
 
 
 def test_migrations_match_models(client):
+    """Works on SQLite and PostgreSQL alike (uses the app's own async driver)."""
+    import asyncio
+
     from alembic.autogenerate import compare_metadata
     from alembic.migration import MigrationContext
-    from sqlalchemy import create_engine
+    from sqlalchemy.ext.asyncio import create_async_engine
     from db.database import Base, DATABASE_URL
 
-    eng = create_engine(DATABASE_URL.replace("+aiosqlite", ""))
-    with eng.connect() as conn:
-        assert compare_metadata(MigrationContext.configure(conn), Base.metadata) == []
-        assert conn.exec_driver_sql("select version_num from alembic_version").scalar() == "0002"
-    eng.dispose()
+    async def check():
+        eng = create_async_engine(DATABASE_URL)
+        async with eng.connect() as conn:
+            diff = await conn.run_sync(lambda c: compare_metadata(MigrationContext.configure(c), Base.metadata))
+            version = (await conn.exec_driver_sql("select version_num from alembic_version")).scalar()
+        await eng.dispose()
+        return diff, version
+
+    diff, version = asyncio.run(check())
+    assert diff == []
+    assert version == "0002"
