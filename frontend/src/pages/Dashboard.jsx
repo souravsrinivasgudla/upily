@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { MapPin, RefreshCw } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { RefreshCw } from 'lucide-react'
 import { errorMessage, refreshCategory } from '../api'
 import { useNewsCache } from '../NewsCache'
 import { useHealth } from '../useHealth'
@@ -45,10 +45,6 @@ function SectionTabs({ current, onSelect, onPrefetch }) {
           {sectionName(cat)}
         </button>
       ))}
-      <Link to="/local"
-            className="flex min-h-[44px] shrink-0 items-center gap-1.5 border-r border-ink px-4 font-sans text-xs font-semibold uppercase tracking-widest transition-colors duration-200 hover:bg-neutral-100 hover:text-accent">
-        <MapPin className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" /> Local
-      </Link>
     </div>
   )
 }
