@@ -6,7 +6,7 @@
 import { useSyncExternalStore } from 'react'
 
 const KEY = 'upily.preferences.v1'
-const DEFAULTS = { sections: [], topics: [] }
+const DEFAULTS = { sections: [], topics: [], location: null }   // location: { state, district }
 const MAX_TOPICS = 12
 
 function read() {
@@ -14,7 +14,8 @@ function read() {
     const saved = JSON.parse(window.localStorage.getItem(KEY) || 'null')
     return saved && typeof saved === 'object'
       ? { sections: Array.isArray(saved.sections) ? saved.sections : [],
-          topics: Array.isArray(saved.topics) ? saved.topics : [] }
+          topics: Array.isArray(saved.topics) ? saved.topics : [],
+          location: saved.location && typeof saved.location.state === 'string' ? saved.location : null }
       : DEFAULTS
   } catch {
     return DEFAULTS   // private mode / blocked storage: preferences just don't persist
@@ -56,7 +57,10 @@ export const preferences = {
   removeTopic(topic) {
     set({ ...state, topics: state.topics.filter(t => t !== topic) })
   },
-  reset() { set(DEFAULTS) },
+  setLocation(region, district = null) {
+    set({ ...state, location: region ? { state: region, district: district || null } : null })
+  },
+  reset() { set({ ...DEFAULTS, location: state.location }) },   // "Clear my edition" keeps the saved area
 }
 
 export function usePreferences() {

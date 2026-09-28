@@ -17,7 +17,9 @@ export default function ArticleCard({ article, variant = 'standard', className }
 
   const meta = (
     <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-1">
-      <Kicker className="text-ink">{article.category}</Kicker>
+      <Kicker className="text-ink">
+        {article.category === 'local' ? (article.location?.district || article.location?.state || 'Local') : article.category}
+      </Kicker>
       <span aria-hidden="true" className="text-neutral-400">/</span>
       <Kicker>{article.source}</Kicker>
       {article.coverage_count > 1 && (

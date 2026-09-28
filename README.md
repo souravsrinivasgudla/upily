@@ -154,6 +154,20 @@ Other behaviour:
   - **Fallback baseline:** the European Central Bank's daily reference rate, used when Twelve Data isn't configured.
   - If a source fails, the strip falls back and says which source it's showing.
 
+## Local news
+
+`/local` lets readers choose **India → state / union territory → district** from dropdowns. The choice is remembered in the browser and kept in the URL, so it can be shared. The page shows **"In {district}"** and **"Across {state}"**.
+
+- **Locations:** `backend/data/india_districts.json` holds all 36 states and UTs and 780 districts. Each state's count was checked against the official total, including the 2022 Andhra Pradesh and 2024 Rajasthan reorganisations and recent renames.
+- **Sources (hybrid):**
+  - **Newspaper feeds:** The Hindu's state feeds (AP, Telangana, Karnataka, Kerala, Tamil Nadu) and city feeds from The Hindu and the Times of India. A city feed counts as its district's news; state and city stories that mention a district, including common spellings like Vizag or Anantapur, count for that district.
+  - **Google News India:** a search for the district or state, keeping only stories whose headline names the place, and filtering out job-alert, price-listing and race-card pages. These are headline-only and link through a Google redirect.
+- **Storage:** stories are stored as category `local` with the location (migration `0003`), so they open in the article page with chat. AI analysis runs only when a local story is opened, to protect the LLM quota. Results are cached per location for 20 minutes, and local stories never appear in the national sections or the ticker.
+- **API:**
+  - `GET /api/locations/states`
+  - `GET /api/locations/districts?state=`
+  - `GET /api/local?state=&district=`
+
 ## AI
 
 The AI section combines the dedicated AI sections of The Guardian, TechCrunch, The Verge, WIRED, Ars Technica and MIT Technology Review with the official OpenAI and Google AI blogs. Like Forex, it keeps stories for 72 hours, because the labs' blogs post every few days. AI stories can also appear in Technology; AI is an overlapping section, so it never pulls stories out of Technology.

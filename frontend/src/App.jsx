@@ -9,6 +9,7 @@ import NotFound from './pages/NotFound'
 import SearchPage from './pages/SearchPage'
 import BriefingPage from './pages/BriefingPage'
 import MyUpilyPage from './pages/MyUpilyPage'
+import LocalPage from './pages/LocalPage'
 
 export default function App() {
   const { pathname } = useLocation()
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/search"      element={<SearchPage />} />
           <Route path="/briefing"    element={<BriefingPage />} />
           <Route path="/my"          element={<MyUpilyPage />} />
+          <Route path="/local"       element={<LocalPage />} />
           <Route path="*"            element={<NotFound />} />
         </Routes>
       </ErrorBoundary>

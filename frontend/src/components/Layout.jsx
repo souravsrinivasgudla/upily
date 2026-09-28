@@ -11,6 +11,7 @@ const NAV = [
   { to: '/',         label: 'Front Page' },
   { to: '/briefing', label: 'Briefing' },
   { to: '/my',       label: 'My Upily' },
+  { to: '/local',    label: 'Local' },
   { to: '/trending', label: 'The Pulse' },
   { to: '/chat',     label: 'Ask the Editor' },
 ]

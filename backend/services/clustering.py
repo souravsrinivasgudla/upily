@@ -104,7 +104,8 @@ async def recluster(hours: int | None = None) -> int:
     hours = hours or settings.RETENTION_HOURS
     async with AsyncSessionLocal() as db:
         rows = (await db.execute(
-            select(Article).where(Article.fetched_at >= utcnow() - timedelta(hours=hours))
+            select(Article).where(Article.fetched_at >= utcnow() - timedelta(hours=hours),
+                                  Article.category != "local")   # local results are deduped per location
         )).scalars().all()
         if not rows:
             return 0

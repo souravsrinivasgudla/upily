@@ -162,4 +162,4 @@ def test_migrations_match_models(client):
 
     diff, version = asyncio.run(check())
     assert diff == []
-    assert version == "0002"
+    assert version == "0003"

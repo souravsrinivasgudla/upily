@@ -35,6 +35,8 @@ from services.tasks import spawn
 
 log = logging.getLogger(__name__)
 
+MAX_LOCAL_STORED = 3000
+
 _write_lock = asyncio.Lock()
 _analysis_locks: dict[int, asyncio.Lock] = {}
 _last_refresh: dict[str, float] = {}
@@ -121,6 +123,10 @@ class OrchestratorAgent:
             return 0
         async with AsyncSessionLocal() as db:
             q = select(Article.id).where(Article.deep_explanation.is_(None))
+            if not ids:
+                # Local stories are analysed on demand (when opened) — readers can browse
+                # hundreds of districts, and bulk-analysing all of them would drain the LLM quota
+                q = q.where(Article.category != "local")
             if ids:
                 q = q.where(Article.id.in_(ids))
             q = q.order_by(desc(Article.importance_score), desc(Article.fetched_at)).limit(limit)
@@ -228,6 +234,16 @@ class OrchestratorAgent:
                     delete(Article).where(Article.category == cat, Article.id.not_in(keep))
                 )
                 removed += res.rowcount or 0
+
+            # Local stories: bounded overall (they're fetched per location, on demand)
+            keep_local = (
+                select(Article.id).where(Article.category == "local")
+                .order_by(desc(Article.fetched_at), desc(Article.id)).limit(MAX_LOCAL_STORED)
+            )
+            res = await db.execute(
+                delete(Article).where(Article.category == "local", Article.id.not_in(keep_local))
+            )
+            removed += res.rowcount or 0
             await db.commit()
         if removed:
             log.info("Cleanup removed %d old articles", removed)

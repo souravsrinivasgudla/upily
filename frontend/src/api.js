@@ -31,6 +31,10 @@ export const refreshCategory = (category)     => apiSlow.post(`/news/refresh/${c
 export const searchNews      = (q, limit = 20) => api.get('/search', { params: { q, limit } }).then(r => r.data)
 export const fetchBriefing   = ()             => apiSlow.get('/briefing').then(r => r.data)
 export const fetchRates      = ()             => api.get('/rates').then(r => r.data)
+export const fetchStates     = ()             => api.get('/locations/states').then(r => r.data.states)
+export const fetchDistricts  = (state)        => api.get('/locations/districts', { params: { state } }).then(r => r.data.districts)
+export const fetchLocalNews  = (state, district) =>
+  apiSlow.get('/local', { params: { state, ...(district ? { district } : {}) } }).then(r => r.data)
 export const fetchCalendar   = ()             => api.get('/calendar').then(r => r.data)
 export const fetchTrending   = (force = false) => api.get('/trending', { params: force ? { force: true } : {} }).then(r => r.data)
 

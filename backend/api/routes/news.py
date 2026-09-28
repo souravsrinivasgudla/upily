@@ -87,6 +87,8 @@ async def list_news(
     q = select(Article)
     if category:
         q = q.where(Article.category == _check_category(category))
+    else:
+        q = q.where(Article.category != "local")   # local stories live on the Local page only
     if trending is not None:
         q = q.where(Article.is_trending == trending)
 

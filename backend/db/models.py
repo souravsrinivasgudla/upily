@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Index, Integer, String, Text
 
 from db.database import Base
 
@@ -40,6 +40,12 @@ class Article(Base):
     tags             = Column(JSON, default=list)
     # Articles about the same event (across outlets) share a cluster_id — see services/clustering.py
     cluster_id       = Column(Integer, index=True)
+    # Local news (category 'local'): the location the story was fetched for — see services/local_news.py
+    loc_country      = Column(String(2))
+    loc_state        = Column(String(100))
+    loc_district     = Column(String(100))
+
+    __table_args__ = (Index("ix_articles_location", "loc_country", "loc_state", "loc_district"),)
 
     @property
     def is_analyzed(self) -> bool:
@@ -61,6 +67,8 @@ class Article(Base):
             "is_analyzed":      self.is_analyzed,
             "cluster_id":       self.cluster_id,
         }
+        if self.category == "local":
+            data["location"] = {"state": self.loc_state, "district": self.loc_district}
         if include_content:
             data.update({
                 "raw_content":      self.raw_content,
