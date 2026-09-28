@@ -1,5 +1,9 @@
 """
-LLMService — single place for all LLM calls (Groq, OpenAI or Anthropic).
+LLMService — single place for all LLM calls (Groq, OpenAI, Anthropic or Gemini).
+
+Providers are tried in order (settings.llm_providers): the main LLM_PROVIDER, then the
+backup (Gemini when GEMINI_API_KEY is set). While the main provider is rate-limited or
+failing, requests go straight to the backup instead of waiting.
 
 `chat()` raises instead of returning placeholder text, so callers can tell
 "no key configured" apart from "provider failed" and show the right message.
@@ -8,10 +12,13 @@ import asyncio
 import logging
 import re
 import time
+from typing import Dict, Optional
 
 from config import settings
 
 log = logging.getLogger(__name__)
+
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
 class LLMError(Exception):
@@ -19,81 +26,120 @@ class LLMError(Exception):
 
 
 class LLMNotConfigured(LLMError):
-    """No API key is set for the selected LLM_PROVIDER."""
+    """No API key is set for any configured provider."""
 
 
 class LLMRateLimited(LLMError):
-    """The provider asked us to back off for longer than is worth waiting inline."""
+    """Every provider asked us to back off for longer than is worth waiting inline."""
 
     def __init__(self, seconds: float):
         super().__init__(f"LLM rate limit — paused for {seconds:.0f}s")
         self.seconds = seconds
 
 
-# When the provider asks for a long back-off (e.g. a daily request cap), every caller
-# stops calling until this monotonic time instead of each retrying on its own.
-_paused_until = 0.0
+# Per provider: monotonic time until which we don't call it (after a long back-off)
+_paused_until: Dict[str, float] = {}
+
+
+def _pause_left(provider: str) -> float:
+    return max(0.0, _paused_until.get(provider, 0.0) - time.monotonic())
 
 
 def pause_remaining() -> float:
-    return max(0.0, _paused_until - time.monotonic())
+    """Seconds until *some* provider is usable again (0 = one is usable now)."""
+    providers = settings.llm_providers
+    return min((_pause_left(p) for p in providers), default=0.0) if providers else 0.0
 
 
 def is_llm_configured() -> bool:
     return settings.llm_configured
 
 
-def is_reasoning_model(model: str) -> bool:
-    return settings.LLM_PROVIDER == "groq" and model.startswith(("openai/gpt-oss", "qwen/qwen3"))
+def is_reasoning_model(model: str, provider: Optional[str] = None) -> bool:
+    return (provider or settings.LLM_PROVIDER) == "groq" and model.startswith(("openai/gpt-oss", "qwen/qwen3"))
 
 
-_client = None  # created lazily and reused so connections are pooled
+_clients: Dict[str, object] = {}   # created lazily per provider and reused (connection pooling)
 
 
-def _get_client():
-    global _client
-    if _client is None:
-        key, timeout = settings.llm_api_key, settings.LLM_TIMEOUT_SECONDS
-        if settings.LLM_PROVIDER == "groq":
+def _client(provider: str):
+    if provider not in _clients:
+        key, timeout = settings.api_key_for(provider), settings.LLM_TIMEOUT_SECONDS
+        if provider == "groq":
             from groq import AsyncGroq
-            _client = AsyncGroq(api_key=key, timeout=timeout, max_retries=0)
-        elif settings.LLM_PROVIDER == "openai":
+            _clients[provider] = AsyncGroq(api_key=key, timeout=timeout, max_retries=0)
+        elif provider in ("openai", "gemini"):
             from openai import AsyncOpenAI
-            _client = AsyncOpenAI(api_key=key, timeout=timeout, max_retries=0)
+            # Gemini offers an OpenAI-compatible endpoint
+            base_url = GEMINI_BASE_URL if provider == "gemini" else None
+            _clients[provider] = AsyncOpenAI(api_key=key, base_url=base_url, timeout=timeout, max_retries=0)
         else:
             import anthropic
-            _client = anthropic.AsyncAnthropic(api_key=key, timeout=timeout, max_retries=0)
-    return _client
+            _clients[provider] = anthropic.AsyncAnthropic(api_key=key, timeout=timeout, max_retries=0)
+    return _clients[provider]
 
 
-async def _call(prompt: str, system: str, max_tokens: int, temperature: float) -> str:
-    client = _get_client()
-    if settings.LLM_PROVIDER == "anthropic":
+async def _call(provider: str, prompt: str, system: str, max_tokens: int, temperature: float) -> str:
+    client = _client(provider)
+    model = settings.model_for(provider)
+    if provider == "anthropic":
         resp = await client.messages.create(
-            model=settings.llm_model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=system,
+            model=model, max_tokens=max_tokens, temperature=temperature, system=system,
             messages=[{"role": "user", "content": prompt}],
         )
         return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
 
     extra = {}
-    if is_reasoning_model(settings.llm_model):
+    if is_reasoning_model(model, provider):
         # Hidden reasoning tokens count toward max_tokens — leave headroom so the answer isn't cut off
         extra["extra_body"] = {"reasoning_effort": settings.LLM_REASONING_EFFORT}
         max_tokens += 1024
+    elif provider == "gemini" and model.startswith("gemini-2.5-flash"):
+        extra["extra_body"] = {"reasoning_effort": "none"}   # no hidden "thinking": faster, cheaper
     resp = await client.chat.completions.create(
-        model=settings.llm_model,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user",   "content": prompt},
-        ],
-        max_tokens=max_tokens,
-        temperature=temperature,
-        **extra,
+        model=model,
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+        max_tokens=max_tokens, temperature=temperature, **extra,
     )
     return (resp.choices[0].message.content or "").strip()
+
+
+async def _try_provider(provider: str, prompt: str, system: str, max_tokens: int, temperature: float,
+                        retries: int, has_backup: bool) -> str:
+    """One provider, with its retry policy. Raises LLMRateLimited / LLMError on failure."""
+    attempt, rate_limit_waits = 0, 0
+    while True:
+        try:
+            text = await _call(provider, prompt, system, max_tokens, temperature)
+            if not text:
+                raise LLMError("Empty response from LLM")
+            return text
+        except LLMError as e:
+            error: Exception = e
+        except Exception as e:  # provider SDK errors
+            error = e
+
+        status = getattr(error, "status_code", None)
+        if status == 429:
+            wait = _retry_after(error)
+            # With a backup available, don't make the reader wait — hand over right away
+            if wait > MAX_RATE_LIMIT_SLEEP or has_backup:
+                _paused_until[provider] = time.monotonic() + wait
+                log.warning("%s rate limit: pausing it for %.0fs (provider said: %s)",
+                            provider, wait, str(error)[:240])
+                raise LLMRateLimited(wait) from error
+            if rate_limit_waits < MAX_RATE_LIMIT_WAITS:
+                rate_limit_waits += 1
+                log.info("%s rate-limited; waiting %.1fs (%d/%d)", provider, wait, rate_limit_waits, MAX_RATE_LIMIT_WAITS)
+                await asyncio.sleep(wait)
+                continue
+
+        log.warning("LLM call failed (%s/%s, attempt %d/%d): %s: %s", provider, settings.model_for(provider),
+                    attempt + 1, retries + 1, type(error).__name__, str(error)[:300])
+        if status in (400, 401, 403, 404) or attempt >= retries or has_backup:
+            raise LLMError(f"{provider} failed: {type(error).__name__}") from error
+        attempt += 1
+        await asyncio.sleep(1.5 * attempt)
 
 
 async def chat(
@@ -103,57 +149,31 @@ async def chat(
     temperature: float = 0.3,
     retries: int = 1,
 ) -> str:
-    """Send a prompt to the configured LLM and return the response text."""
-    global _paused_until
-    if not settings.llm_configured:
-        raise LLMNotConfigured(
-            f"No API key set for LLM_PROVIDER={settings.LLM_PROVIDER}"
-        )
-    if pause_remaining():
-        raise LLMRateLimited(pause_remaining())
+    """Send a prompt to the first available provider and return the response text."""
+    providers = settings.llm_providers
+    if not providers:
+        raise LLMNotConfigured(f"No API key set for LLM_PROVIDER={settings.LLM_PROVIDER} (and no backup)")
 
-    last_error: Exception | None = None
-    attempt, rate_limit_waits = 0, 0
-    while True:
+    last: Optional[LLMError] = None
+    for i, provider in enumerate(providers):
+        if _pause_left(provider):
+            last = LLMRateLimited(_pause_left(provider))
+            continue
+        has_backup = any(not _pause_left(p) for p in providers[i + 1:])
         try:
-            text = await _call(prompt, system, max_tokens, temperature)
-            if not text:
-                raise LLMError("Empty response from LLM")
+            text = await _try_provider(provider, prompt, system, max_tokens, temperature, retries, has_backup)
+            if i:
+                log.info("Answered by backup provider %s", provider)
             return text
         except LLMError as e:
-            last_error = e
-        except Exception as e:  # provider SDK errors
-            last_error = e
-
-        status = getattr(last_error, "status_code", None)
-        if status == 429:
-            wait = _retry_after(last_error)
-            if wait > MAX_RATE_LIMIT_SLEEP:
-                # A long back-off (daily cap, big token debt): stop everyone, don't spin
-                _paused_until = time.monotonic() + wait
-                log.warning("LLM rate limit: pausing AI calls for %.0fs (provider said: %s)",
-                            wait, str(last_error)[:240])
-                raise LLMRateLimited(wait) from last_error
-            if rate_limit_waits < MAX_RATE_LIMIT_WAITS:
-                # Per-minute limit: wait as long as the provider asks, then retry
-                rate_limit_waits += 1
-                log.info("LLM rate-limited; waiting %.1fs (%d/%d)", wait, rate_limit_waits, MAX_RATE_LIMIT_WAITS)
-                await asyncio.sleep(wait)
-                continue
-
-        log.warning("LLM call failed (attempt %d/%d, %s/%s): %s: %s",
-                    attempt + 1, retries + 1, settings.LLM_PROVIDER, settings.llm_model,
-                    type(last_error).__name__, str(last_error)[:300])
-        if status in (400, 401, 403, 404) or attempt >= retries:
-            break   # bad key / unknown model — retrying won't help; or out of retries
-        attempt += 1
-        await asyncio.sleep(1.5 * attempt)
-
-    raise LLMError(f"LLM call failed: {type(last_error).__name__}") from last_error
+            last = e
+    if all(_pause_left(p) for p in providers):
+        raise LLMRateLimited(pause_remaining())
+    raise last or LLMError("LLM call failed")
 
 
 MAX_RATE_LIMIT_WAITS = 4
-MAX_RATE_LIMIT_SLEEP = 60.0     # longer requested waits pause all calls instead (see LLMRateLimited)
+MAX_RATE_LIMIT_SLEEP = 60.0     # longer requested waits pause the provider instead
 _TRY_AGAIN = re.compile(r"try again in (?:(\d+)m)?([\d.]+)s", re.I)
 
 

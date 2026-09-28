@@ -11,6 +11,7 @@ DEFAULT_MODELS = {
     "groq":      "openai/gpt-oss-120b",
     "openai":    "gpt-4o-mini",
     "anthropic": "claude-haiku-4-5-20251001",
+    "gemini":    "gemini-2.5-flash",
 }
 
 
@@ -32,11 +33,16 @@ class Settings(BaseSettings):
     DATABASE_URL: str = f"sqlite+aiosqlite:///{(BACKEND_DIR / 'upily.db').as_posix()}"
 
     # LLM
-    LLM_PROVIDER: str = "groq"            # groq | openai | anthropic
+    LLM_PROVIDER: str = "groq"            # groq | openai | anthropic | gemini
     LLM_MODEL: Optional[str] = None       # defaults per provider, see DEFAULT_MODELS
     GROQ_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: Optional[str] = None    # defaults to DEFAULT_MODELS["gemini"]
+    # Backup provider used while the main one is rate-limited or failing.
+    # Unset → Gemini when GEMINI_API_KEY is set; "none" disables the backup.
+    LLM_FALLBACK_PROVIDER: Optional[str] = None
     LLM_TIMEOUT_SECONDS: float = 30.0
     # For reasoning models (gpt-oss): low keeps answers fast and cheap
     LLM_REASONING_EFFORT: str = "low"
@@ -83,17 +89,47 @@ class Settings(BaseSettings):
     def llm_model(self) -> str:
         return self.LLM_MODEL or DEFAULT_MODELS[self.LLM_PROVIDER]
 
-    @property
-    def llm_api_key(self) -> Optional[str]:
+    def api_key_for(self, provider: str) -> Optional[str]:
         return {
             "groq":      self.GROQ_API_KEY,
             "openai":    self.OPENAI_API_KEY,
             "anthropic": self.ANTHROPIC_API_KEY,
-        }[self.LLM_PROVIDER]
+            "gemini":    self.GEMINI_API_KEY,
+        }.get(provider)
+
+    def model_for(self, provider: str) -> str:
+        if provider == self.LLM_PROVIDER and self.LLM_MODEL:
+            return self.LLM_MODEL
+        if provider == "gemini" and self.GEMINI_MODEL:
+            return self.GEMINI_MODEL
+        return DEFAULT_MODELS[provider]
+
+    @property
+    def llm_api_key(self) -> Optional[str]:
+        return self.api_key_for(self.LLM_PROVIDER)
+
+    @property
+    def llm_fallback(self) -> Optional[str]:
+        choice = (self.LLM_FALLBACK_PROVIDER or "").strip().lower()
+        if choice == "none":
+            return None
+        if not choice:
+            choice = "gemini" if self.GEMINI_API_KEY else ""
+        if choice in DEFAULT_MODELS and choice != self.LLM_PROVIDER and self.api_key_for(choice):
+            return choice
+        return None
+
+    @property
+    def llm_providers(self) -> list[str]:
+        """Providers to try, in order: the main one (if it has a key), then the backup."""
+        order = [self.LLM_PROVIDER] if self.llm_api_key else []
+        if self.llm_fallback:
+            order.append(self.llm_fallback)
+        return order
 
     @property
     def llm_configured(self) -> bool:
-        return bool(self.llm_api_key)
+        return bool(self.llm_providers)
 
     @property
     def cors_origins(self) -> list[str]:

@@ -178,7 +178,7 @@ def test_long_rate_limit_pauses_all_calls(monkeypatch):
 
     monkeypatch.setattr(llm_service.settings, "GROQ_API_KEY", "test-key")
     monkeypatch.setattr(llm_service, "_call", fake_call)
-    monkeypatch.setattr(llm_service, "_paused_until", 0.0)
+    monkeypatch.setattr(llm_service, "_paused_until", {})
 
     for _ in range(2):
         try:
@@ -221,3 +221,40 @@ def test_name_check_asks_the_model_and_accepts_only_small_edits(monkeypatch):
     clean = {**analysis, "summary": "Scheffler starred.", "deep_explanation": "Scheffler led."}
     assert asyncio.run(sa.SummarizerAgent()._verify_names(clean, "Scheffler shines", "Scheffler won.")) == clean
     assert calls == []   # nothing flagged → no extra LLM call
+
+
+
+def test_backup_provider_takes_over_when_main_is_rate_limited(monkeypatch):
+    import asyncio
+    from services import llm_service
+
+    class RateLimit(Exception):
+        status_code = 429
+
+    calls = []
+
+    async def fake_call(provider, *a, **kw):
+        calls.append(provider)
+        if provider == "groq":
+            raise RateLimit("Rate limit reached on tokens per minute. Please try again in 20s.")
+        return "answer from gemini"
+
+    monkeypatch.setattr(llm_service.settings, "GROQ_API_KEY", "g")
+    monkeypatch.setattr(llm_service.settings, "GEMINI_API_KEY", "m")
+    monkeypatch.setattr(llm_service, "_call", fake_call)
+    monkeypatch.setattr(llm_service, "_paused_until", {})
+
+    assert llm_service.settings.llm_providers == ["groq", "gemini"]
+    assert asyncio.run(llm_service.chat("hi")) == "answer from gemini"
+    assert calls == ["groq", "gemini"]           # no 20 s wait — handed over at once
+    # While Groq is paused, calls go straight to Gemini
+    assert asyncio.run(llm_service.chat("again")) == "answer from gemini"
+    assert calls == ["groq", "gemini", "gemini"]
+
+
+def test_fallback_can_be_disabled(monkeypatch):
+    from config import settings
+    monkeypatch.setattr(settings, "GROQ_API_KEY", "g")
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "m")
+    monkeypatch.setattr(settings, "LLM_FALLBACK_PROVIDER", "none")
+    assert settings.llm_providers == ["groq"]

@@ -21,6 +21,7 @@ os.environ.update({
     "GROQ_API_KEY": "",
     "OPENAI_API_KEY": "",
     "ANTHROPIC_API_KEY": "",
+    "GEMINI_API_KEY": "",
     "GNEWS_API_KEY": "",
     "NEWS_API_KEY": "",
     "SERPAPI_API_KEY": "",

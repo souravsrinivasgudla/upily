@@ -57,6 +57,7 @@ Real environment variables take precedence over `.env`.
 | Variable | Needed for | Where to get it |
 |---|---|---|
 | `GROQ_API_KEY` | AI analysis, chat, trending topics (**recommended**) | [console.groq.com/keys](https://console.groq.com/keys), free tier |
+| `GEMINI_API_KEY` | Backup LLM: takes over automatically while the main provider is rate-limited or down | [aistudio.google.com/apikey](https://aistudio.google.com/apikey), free tier |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | Alternatives to Groq; also set `LLM_PROVIDER` | platform.openai.com / console.anthropic.com |
 | `GNEWS_API_KEY` | The Pulse (trending); tops up thin RSS sections | [gnews.io](https://gnews.io), 100 requests/day free |
 | `SERPAPI_API_KEY` | The Pulse (Google News top stories) | [serpapi.com](https://serpapi.com), 100 searches/month free |
@@ -87,6 +88,7 @@ With no keys at all, Upily still works: news comes from RSS and articles show th
    | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (a reference to the Railway database) |
    | `LLM_PROVIDER` | `groq` |
    | `GROQ_API_KEY` | your Groq key |
+   | `GEMINI_API_KEY` | optional backup LLM, used while Groq is rate-limited |
    | `GNEWS_API_KEY` | your GNews key (for The Pulse) |
    | `TWELVE_DATA_API_KEY` | optional (Forex previous close and day range) |
    | `ADMIN_API_KEY` | a long random string |
