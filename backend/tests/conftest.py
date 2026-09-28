@@ -20,6 +20,7 @@ os.environ.update({
     "NEWS_API_KEY": "",
     "SERPAPI_API_KEY": "",
     "SERPER_API_KEY": "",
+    "TWELVE_DATA_API_KEY": "",
     "ADMIN_API_KEY": "test-admin-token",
 })
 

@@ -66,17 +66,22 @@ export default function RatesStrip() {
     <section aria-labelledby="rates-heading" className="mt-6">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h2 id="rates-heading" className="flex items-center gap-2">
-          {data.live ? (
+          {data.live && data.market_open !== false ? (
             <span className="inline-flex items-center gap-1.5 bg-accent px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-widest text-white">
               <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse bg-white" /> Live
             </span>
           ) : (
-            <span className="border border-ink px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest">Reference</span>
+            <span className="border border-ink px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest">
+              {data.market_open === false ? 'Market closed' : data.live ? 'Live' : 'Delayed'}
+            </span>
           )}
           <Kicker className="text-ink">Currency markets</Kicker>
         </h2>
         <Kicker aria-live="off">
-          {data.live ? `Updated ${secondsAgo(data.as_of, now)}` : `ECB reference rates as of ${ecbDate(data.as_of)}`}
+          {data.market_open === true && 'Market open · '}
+          {data.live || data.quotes_source === 'Twelve Data'
+            ? `Updated ${secondsAgo(data.as_of, now)}`
+            : `ECB reference rates as of ${ecbDate(data.as_of)}`}
         </Kicker>
       </div>
 
@@ -97,6 +102,11 @@ export default function RatesStrip() {
                   <span className="sr-only">{up ? ' up' : down ? ' down' : ' unchanged'} {data.change_basis}</span>
                 </p>
               )}
+              {p.low != null && p.high != null && (
+                <p className="mt-0.5 font-mono text-[9px] tabular-nums text-neutral-500" title="Today's range">
+                  <span className="sr-only">Day range </span>{formatRate(p.low)}–{formatRate(p.high)}
+                </p>
+              )}
             </li>
           )
         })}
@@ -104,13 +114,15 @@ export default function RatesStrip() {
 
       <div className="mt-2 flex flex-wrap justify-between gap-2">
         <Kicker>
-          {data.live
-            ? `Indicative mid-market rates · change since the ECB reference rate${data.baseline_date ? ` of ${ecbDate(data.baseline_date)}` : ''}`
-            : `Live rates unavailable — showing ECB reference rates · change ${data.change_basis}`}
+          {data.live ? 'Indicative mid-market prices' : `Live prices unavailable — ${data.price_source}`}
+          {' · change '}
+          {data.baseline_date ? `since the ECB reference rate of ${ecbDate(data.baseline_date)}` : data.change_basis}
+          {data.quotes_source === 'Twelve Data' && ' · day range'}
         </Kicker>
         <a href={data.source_url} target="_blank" rel="noopener noreferrer"
            className="font-mono text-[11px] uppercase tracking-widest text-neutral-500 underline-offset-4 hover:text-ink hover:underline">
-          Source: {data.live ? 'Coinbase' : 'ECB'} ↗
+          Prices: {data.live ? 'Coinbase' : data.quotes_source === 'Twelve Data' ? 'Twelve Data' : 'ECB'}
+          {data.quotes_source === 'Twelve Data' && data.live ? ' · Close & range: Twelve Data' : ''} ↗
         </a>
       </div>
     </section>

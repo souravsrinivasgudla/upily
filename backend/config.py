@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     NEWS_API_KEY: Optional[str] = None     # newsapi.org
     SERPAPI_API_KEY: Optional[str] = None  # serpapi.com (trending page)
 
+    # Forex market quotes (optional — previous close, day high/low, market open)
+    TWELVE_DATA_API_KEY: Optional[str] = None   # twelvedata.com (free: 800 credits/day)
+
     # Web search for chat (optional — DuckDuckGo fallback)
     SERPER_API_KEY: Optional[str] = None   # serper.dev
 

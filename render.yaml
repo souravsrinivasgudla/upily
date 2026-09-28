@@ -32,3 +32,5 @@ services:
         sync: false
       - key: SERPER_API_KEY
         sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false

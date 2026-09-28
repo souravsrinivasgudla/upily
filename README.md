@@ -61,6 +61,7 @@ Real environment variables take precedence over `.env`.
 | `GNEWS_API_KEY` | The Pulse (trending); tops up thin RSS sections | [gnews.io](https://gnews.io), 100 requests/day free |
 | `SERPAPI_API_KEY` | The Pulse (Google News top stories) | [serpapi.com](https://serpapi.com), 100 searches/month free |
 | `NEWS_API_KEY` | Optional extra news source | [newsapi.org](https://newsapi.org); the free tier only works from localhost |
+| `TWELVE_DATA_API_KEY` | Optional: real previous close, day range and market status on the Forex tab | [twelvedata.com](https://twelvedata.com), free plan 800 credits/day |
 | `SERPER_API_KEY` | Optional better web search in chat (otherwise DuckDuckGo is used) | [serper.dev](https://serper.dev) |
 | `ADMIN_API_KEY` | Admin endpoints (see below) | Any long random string |
 | `DATABASE_URL` | **Production only:** Postgres | e.g. [neon.tech](https://neon.tech) free tier |
@@ -147,7 +148,11 @@ Other behaviour:
 - **Search.** It's in the nav bar, with results at `/search?q=`. It uses the same ranking as the chat's retrieval, so it matches the evaluation harness's numbers.
 - **Daily briefing** (`/briefing`). It shows the top story from each section, an AI editor's note written only from those headlines, and the next 36 hours of high-impact economic releases. **Listen** reads it aloud with the browser's built-in speech synthesis and highlights the story being read. No extra service or cost.
 - **My Upily** (`/my`). A personal front page built from sections and topics you follow. Preferences are stored in the browser, so no account is needed.
-- **Live currency rates** (Forex tab). Eight major pairs from Coinbase's public exchange-rates API. These are indicative mid-market rates, fine for a news site but not dealer quotes. The strip refreshes every 30 seconds while the tab is visible and flashes a pair when it moves. The change figure is measured against the European Central Bank's last daily reference rate. If the live source fails, the strip falls back to ECB rates and says so.
+- **Live currency rates** (Forex tab). Eight major pairs. The strip refreshes every 30 seconds while the tab is visible and flashes a pair when it moves. Three sources, each used for what it's good at:
+  - **Prices:** Coinbase's public exchange-rates API, refreshed every 30 s. These are indicative mid-market prices; no key is needed.
+  - **Previous close, day high/low and market open/closed:** Twelve Data (`TWELVE_DATA_API_KEY`, optional). The free plan allows 800 credits a day and each pair costs one, so quotes refresh every 15 minutes (~770 credits a day), with a hard cap below the limit.
+  - **Fallback baseline:** the European Central Bank's daily reference rate, used when Twelve Data isn't configured.
+  - If a source fails, the strip falls back and says which source it's showing.
 
 ## AI
 
