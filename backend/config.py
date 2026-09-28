@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     ARTICLES_PER_CATEGORY: int = 6         # new articles stored per category per run
     MAX_STORED_PER_CATEGORY: int = 30      # hard cap per category after cleanup
     REFRESH_COOLDOWN_SECONDS: int = 300    # min gap between manual refreshes of one category
+    # Gap between background AI analyses. Each costs ~2-3k tokens; Groq's free tier allows
+    # 8k tokens/min, so ~20 s keeps background work under the limit with room for chat.
+    ANALYSIS_PACE_SECONDS: float = 20.0
 
     @field_validator("LLM_PROVIDER")
     @classmethod

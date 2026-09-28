@@ -159,8 +159,35 @@ def test_rate_limit_wait_is_read_from_the_error():
     from services.llm_service import _retry_after
     err = Exception("Rate limit reached ... Please try again in 2.8275s. Need more tokens?")
     assert abs(_retry_after(err) - 3.3275) < 1e-6
-    assert _retry_after(Exception("try again in 1m5.5s")) == 30.0   # capped
+    assert _retry_after(Exception("try again in 1m5.5s")) == 66.0
     assert _retry_after(Exception("no hint")) == 5.5
+
+
+def test_long_rate_limit_pauses_all_calls(monkeypatch):
+    import asyncio
+    from services import llm_service
+
+    class RateLimit(Exception):
+        status_code = 429
+
+    calls = []
+
+    async def fake_call(*a, **kw):
+        calls.append(1)
+        raise RateLimit("Rate limit reached for requests per day. Please try again in 12m30s.")
+
+    monkeypatch.setattr(llm_service.settings, "GROQ_API_KEY", "test-key")
+    monkeypatch.setattr(llm_service, "_call", fake_call)
+    monkeypatch.setattr(llm_service, "_paused_until", 0.0)
+
+    for _ in range(2):
+        try:
+            asyncio.run(llm_service.chat("hi"))
+            raise AssertionError("expected LLMRateLimited")
+        except llm_service.LLMRateLimited as e:
+            assert e.seconds > 700
+    assert len(calls) == 1                     # the second call didn't hit the provider at all
+    assert llm_service.pause_remaining() > 700
 
 
 def test_invented_name_candidates_are_flagged():

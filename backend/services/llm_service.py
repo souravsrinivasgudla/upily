@@ -7,6 +7,7 @@ LLMService — single place for all LLM calls (Groq, OpenAI or Anthropic).
 import asyncio
 import logging
 import re
+import time
 
 from config import settings
 
@@ -19,6 +20,23 @@ class LLMError(Exception):
 
 class LLMNotConfigured(LLMError):
     """No API key is set for the selected LLM_PROVIDER."""
+
+
+class LLMRateLimited(LLMError):
+    """The provider asked us to back off for longer than is worth waiting inline."""
+
+    def __init__(self, seconds: float):
+        super().__init__(f"LLM rate limit — paused for {seconds:.0f}s")
+        self.seconds = seconds
+
+
+# When the provider asks for a long back-off (e.g. a daily request cap), every caller
+# stops calling until this monotonic time instead of each retrying on its own.
+_paused_until = 0.0
+
+
+def pause_remaining() -> float:
+    return max(0.0, _paused_until - time.monotonic())
 
 
 def is_llm_configured() -> bool:
@@ -86,10 +104,13 @@ async def chat(
     retries: int = 1,
 ) -> str:
     """Send a prompt to the configured LLM and return the response text."""
+    global _paused_until
     if not settings.llm_configured:
         raise LLMNotConfigured(
             f"No API key set for LLM_PROVIDER={settings.LLM_PROVIDER}"
         )
+    if pause_remaining():
+        raise LLMRateLimited(pause_remaining())
 
     last_error: Exception | None = None
     attempt, rate_limit_waits = 0, 0
@@ -105,14 +126,19 @@ async def chat(
             last_error = e
 
         status = getattr(last_error, "status_code", None)
-        if status == 429 and rate_limit_waits < MAX_RATE_LIMIT_WAITS:
-            # Per-minute token/request limit: wait as long as the provider asks, then retry.
-            # (Free tiers hit this whenever the pipeline analyses a batch of stories.)
+        if status == 429:
             wait = _retry_after(last_error)
-            rate_limit_waits += 1
-            log.info("LLM rate-limited; waiting %.1fs (%d/%d)", wait, rate_limit_waits, MAX_RATE_LIMIT_WAITS)
-            await asyncio.sleep(wait)
-            continue
+            if wait > MAX_RATE_LIMIT_SLEEP:
+                # A long back-off (daily cap, big token debt): stop everyone, don't spin
+                _paused_until = time.monotonic() + wait
+                log.warning("LLM rate limit: pausing AI calls for %.0fs", wait)
+                raise LLMRateLimited(wait) from last_error
+            if rate_limit_waits < MAX_RATE_LIMIT_WAITS:
+                # Per-minute limit: wait as long as the provider asks, then retry
+                rate_limit_waits += 1
+                log.info("LLM rate-limited; waiting %.1fs (%d/%d)", wait, rate_limit_waits, MAX_RATE_LIMIT_WAITS)
+                await asyncio.sleep(wait)
+                continue
 
         log.warning("LLM call failed (attempt %d/%d, %s/%s): %s: %s",
                     attempt + 1, retries + 1, settings.LLM_PROVIDER, settings.llm_model,
@@ -126,7 +152,7 @@ async def chat(
 
 
 MAX_RATE_LIMIT_WAITS = 4
-MAX_RATE_LIMIT_SLEEP = 30.0
+MAX_RATE_LIMIT_SLEEP = 60.0     # longer requested waits pause all calls instead (see LLMRateLimited)
 _TRY_AGAIN = re.compile(r"try again in (?:(\d+)m)?([\d.]+)s", re.I)
 
 
@@ -140,4 +166,4 @@ def _retry_after(error: Exception) -> float:
         m = _TRY_AGAIN.search(str(error))
         if m:
             wait = int(m.group(1) or 0) * 60 + float(m.group(2))
-    return min((wait or 5.0) + 0.5, MAX_RATE_LIMIT_SLEEP)
+    return (wait or 5.0) + 0.5

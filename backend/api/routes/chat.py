@@ -45,6 +45,10 @@ async def chat(req: ChatRequest, db: AsyncSession = Depends(get_db)):
             article_context=article_ctx,
             history=[t.model_dump() for t in req.history],
         )
+    except llm_service.LLMRateLimited as e:
+        minutes = max(1, round(e.seconds / 60))
+        raise HTTPException(status_code=503, detail=f"The AI desk has hit its usage limit. Try again in about {minutes} minute{'s' if minutes > 1 else ''}.",
+                            headers={"Retry-After": str(int(e.seconds))})
     except llm_service.LLMNotConfigured:
         raise HTTPException(status_code=503, detail="The AI assistant is not configured on this server.")
     except llm_service.LLMError:

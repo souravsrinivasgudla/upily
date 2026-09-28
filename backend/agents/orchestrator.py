@@ -133,11 +133,16 @@ class OrchestratorAgent:
             pending = (await db.execute(q)).scalars().all()
 
         done, consecutive_failures = 0, 0
-        for article_id in pending:
+        for n, article_id in enumerate(pending):
+            if n:
+                await asyncio.sleep(settings.ANALYSIS_PACE_SECONDS)   # stay under the LLM's per-minute limit
             try:
                 if await self.analyze_article(article_id):
                     done += 1
                 consecutive_failures = 0
+            except llm_service.LLMRateLimited as e:
+                log.warning("Analysis paused: %s — the rest waits for the next run", e)
+                break
             except llm_service.LLMError as e:
                 log.warning("Analysis failed for article %s: %s", article_id, e)
                 consecutive_failures += 1
