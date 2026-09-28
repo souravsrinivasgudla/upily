@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Menu, Search, X } from 'lucide-react'
 import Ticker from './Ticker'
 import { cn, Kicker } from './ui'
 import { editionDate, editionNumber } from '../format'
 import { useHealth } from '../useHealth'
+import { SearchForm } from '../pages/SearchPage'
 
 const NAV = [
   { to: '/',         label: 'Front Page' },
+  { to: '/briefing', label: 'Briefing' },
+  { to: '/my',       label: 'My Upily' },
   { to: '/trending', label: 'The Pulse' },
   { to: '/chat',     label: 'Ask the Editor' },
 ]
@@ -41,6 +44,8 @@ function Masthead() {
 function SectionNav() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const search = (q) => navigate(`/search?q=${encodeURIComponent(q)}`)
   useEffect(() => setOpen(false), [pathname])
 
   const link = ({ isActive }) => cn(
@@ -74,19 +79,27 @@ function SectionNav() {
           {open ? <X className="h-6 w-6" strokeWidth={1.5} /> : <Menu className="h-6 w-6" strokeWidth={1.5} />}
         </button>
 
-        <p className="hidden items-center md:flex">
-          <Kicker>Refreshed through the day</Kicker>
-        </p>
+        <div className="hidden items-center lg:flex">
+          <SearchForm compact onSearch={search} />
+        </div>
+        <Link to="/search" aria-label="Search" className="hidden h-11 w-11 items-center justify-center hover:text-accent md:flex lg:hidden">
+          <Search className="h-5 w-5" strokeWidth={1.5} />
+        </Link>
       </div>
 
       {open && (
-        <ul id="mobile-menu" className="border-t border-ink md:hidden">
+        <div id="mobile-menu" className="border-t border-ink md:hidden">
+        <div className="border-b border-ink px-4 py-3">
+          <SearchForm onSearch={search} />
+        </div>
+        <ul>
           {NAV.map(({ to, label }) => (
             <li key={to} className="border-b border-ink last:border-b-0">
               <NavLink to={to} end={to === '/'} className={link}>{label}</NavLink>
             </li>
           ))}
         </ul>
+        </div>
       )}
     </nav>
   )

@@ -115,6 +115,9 @@ With no keys at all, Upily still works: news comes from RSS and articles show th
 | `POST` | `/api/news/{id}/analyze` | Writes the AI analysis on the server. Returns the saved analysis if it already exists. Rate-limited. |
 | `POST` | `/api/news/refresh/{category}` | Adds new stories without deleting any. Rate-limited, with a cooldown per section. |
 | `GET` | `/api/calendar` | This week's economic calendar from Forex Factory (`?impact=High,Medium`), cached for 1 hour |
+| `GET` | `/api/search` | `?q=` keyword search over stored stories, one result per story group |
+| `GET` | `/api/briefing` | Top story per section, an AI editor's note (cached 1h) and high-impact market events in the next 36h |
+| `GET` | `/api/rates` | Major currency pairs from ECB reference rates with the change on the day, cached 30 min |
 | `POST` | `/api/chat` | `{ question, article_id?, history? }`. Rate-limited. |
 | `GET` | `/api/trending` | `?force=true` skips the 45-minute cache, at most once every 10 minutes (protects the GNews free quota) |
 | `POST` | `/api/admin/pipeline` | Admin only (`X-Admin-Token` header): run the full pipeline now |
@@ -138,6 +141,13 @@ Other behaviour:
 
 - On startup, the pipeline runs only if the stored news is older than the interval.
 - All writes share one lock, so the scheduled runs and manual refreshes can't collide.
+
+## Reader features
+
+- **Search.** It's in the nav bar, with results at `/search?q=`. It uses the same ranking as the chat's retrieval, so it matches the evaluation harness's numbers.
+- **Daily briefing** (`/briefing`). It shows the top story from each section, an AI editor's note written only from those headlines, and the next 36 hours of high-impact economic releases. **Listen** reads it aloud with the browser's built-in speech synthesis and highlights the story being read. No extra service or cost.
+- **My Upily** (`/my`). A personal front page built from sections and topics you follow. Preferences are stored in the browser, so no account is needed.
+- **Currency rates** (Forex tab). Eight major pairs from the European Central Bank's official daily reference rates, with the change on the day. They're labelled as daily reference rates, not live quotes; real-time FX needs a paid data feed.
 
 ## AI
 

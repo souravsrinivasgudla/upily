@@ -28,6 +28,9 @@ export const fetchNews       = (params = {})  => api.get('/news', { params }).th
 export const fetchArticle    = (id)           => api.get(`/news/${id}`).then(r => r.data)
 export const analyzeArticle  = (id)           => apiSlow.post(`/news/${id}/analyze`).then(r => r.data)
 export const refreshCategory = (category)     => apiSlow.post(`/news/refresh/${category}`).then(r => r.data)
+export const searchNews      = (q, limit = 20) => api.get('/search', { params: { q, limit } }).then(r => r.data)
+export const fetchBriefing   = ()             => apiSlow.get('/briefing').then(r => r.data)
+export const fetchRates      = ()             => api.get('/rates').then(r => r.data)
 export const fetchCalendar   = ()             => api.get('/calendar').then(r => r.data)
 export const fetchTrending   = (force = false) => api.get('/trending', { params: force ? { force: true } : {} }).then(r => r.data)
 

@@ -6,6 +6,7 @@ import { useNewsCache } from '../NewsCache'
 import { useHealth } from '../useHealth'
 import ArticleCard from '../components/ArticleCard'
 import EconomicCalendar from '../components/EconomicCalendar'
+import RatesStrip from '../components/RatesStrip'
 import { Button, cn, Figure, Kicker, Loading, Notice, Ornament, SectionHeading } from '../components/ui'
 import { sectionName, sectionTitle } from '../format'
 
@@ -155,6 +156,8 @@ export default function Dashboard() {
           {refreshing ? 'Checking…' : 'Check for new stories'}
         </Button>
       </div>
+
+      {category === 'forex' && <RatesStrip />}
 
       <div className="mt-4 space-y-3" aria-live="polite">
         {notice && <Notice tone={notice.tone}>{notice.text}</Notice>}

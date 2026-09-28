@@ -6,6 +6,9 @@ import ArticlePage from './pages/ArticlePage'
 import ChatPage from './pages/ChatPage'
 import TrendingPage from './pages/TrendingPage'
 import NotFound from './pages/NotFound'
+import SearchPage from './pages/SearchPage'
+import BriefingPage from './pages/BriefingPage'
+import MyUpilyPage from './pages/MyUpilyPage'
 
 export default function App() {
   const { pathname } = useLocation()
@@ -17,6 +20,9 @@ export default function App() {
           <Route path="/article/:id" element={<ArticlePage />} />
           <Route path="/chat"        element={<ChatPage />} />
           <Route path="/trending"    element={<TrendingPage />} />
+          <Route path="/search"      element={<SearchPage />} />
+          <Route path="/briefing"    element={<BriefingPage />} />
+          <Route path="/my"          element={<MyUpilyPage />} />
           <Route path="*"            element={<NotFound />} />
         </Routes>
       </ErrorBoundary>
